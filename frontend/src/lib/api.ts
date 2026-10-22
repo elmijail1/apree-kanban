@@ -1,9 +1,4 @@
-import {
-  PAGE_SIZE,
-  type TaskBoard,
-  type TaskPage,
-  type TaskStatus,
-} from "./tasks";
+import { PAGE_SIZE, type TaskPage, type TaskStatus } from "./tasks";
 
 export class ApiError extends Error {
   constructor(
@@ -30,7 +25,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function fetchColumnPage(
+export function fetchColumnPage(
   status: TaskStatus,
   cursor: string | null,
   signal?: AbortSignal,
@@ -39,6 +34,5 @@ export async function fetchColumnPage(
   if (cursor) {
     params.set("cursor", cursor);
   }
-  const board = await request<TaskBoard>(`/tasks?${params}`, { signal });
-  return board[status] ?? { items: [], nextCursor: null };
+  return request<TaskPage>(`/tasks?${params}`, { signal });
 }

@@ -29,19 +29,14 @@ export const updateTaskStatusSchema = z.object({
 });
 export type UpdateTaskStatusInput = z.output<typeof updateTaskStatusSchema>;
 
-export const listTasksQuerySchema = z
-  .object({
-    status: z.union([taskStatusSchema, z.literal('all')]).default('all'),
-    limit: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .max(MAX_PAGE_SIZE)
-      .default(DEFAULT_PAGE_SIZE),
-    cursor: z.string().min(1).optional(),
-  })
-  .refine((query) => !(query.cursor && query.status === 'all'), {
-    message: 'cursor requires a single status',
-    path: ['cursor'],
-  });
+export const listTasksQuerySchema = z.object({
+  status: taskStatusSchema,
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_PAGE_SIZE)
+    .default(DEFAULT_PAGE_SIZE),
+  cursor: z.string().min(1).optional(),
+});
 export type ListTasksQuery = z.output<typeof listTasksQuerySchema>;

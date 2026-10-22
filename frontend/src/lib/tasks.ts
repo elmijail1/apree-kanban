@@ -20,12 +20,24 @@ export interface TaskPage {
   nextCursor: string | null;
 }
 
-export type TaskBoard = Partial<Record<TaskStatus, TaskPage>>;
-
 export const COLUMNS: ReadonlyArray<{ status: TaskStatus; title: string }> = [
   { status: "new", title: "Новая" },
   { status: "inProgress", title: "В работе" },
   { status: "completed", title: "Готово" },
 ];
 
+export const PRIORITY_LABELS: Record<TaskPriority, string> = {
+  low: "Низкий",
+  normal: "Средний",
+  high: "Высокий",
+};
+
 export const PAGE_SIZE = 5;
+export const DESCRIPTION_PREVIEW_LENGTH = 50;
+
+export function previewText(text: string, maxLength: number): string {
+  const chars = Array.from(text.trim());
+  return chars.length > maxLength
+    ? `${chars.slice(0, maxLength).join("").trimEnd()}…`
+    : chars.join("");
+}

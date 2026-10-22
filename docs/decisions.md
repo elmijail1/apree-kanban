@@ -66,8 +66,9 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 ## D5. Board API with per-column cursor pagination
 
 **Decision:**
-- `GET /tasks?status=<new|inProgress|completed|all>&limit=<1..50, default 5>&cursor=<opaque>` always returns the same shape, keyed by status: `{ [status]: { items: Task[], nextCursor: string | null } }`. `status=all` (the default) returns the first page of every column for the initial load. A single status plus `cursor` loads the next page of that column.
-- The cursor is keyset-based. It encodes the last task's `(statusChangedAt, id)` as base64url, and `id` breaks ties between tasks moved in the same millisecond. `cursor` with `status=all` is rejected (400).
+- `GET /tasks?status=<new|inProgress|completed>&limit=<1..50, default 5>&cursor=<opaque>` returns one page of one column: `{ items: Task[], nextCursor: string | null }`. `status` is required. Without `cursor` it returns the first page; with `nextCursor` from the previous response, the next one.
+- The cursor is keyset-based. It encodes the last task's `(statusChangedAt, id)` as base64url, and `id` breaks ties between tasks moved in the same millisecond.
+- *Revised:* an earlier `status=all` mode (all three columns in one response, keyed by status) was removed once each column got its own query (D8). Nothing used it.
 - `PATCH /tasks/:id/status` with `{ status }` is a dedicated endpoint for moves. It's one conditional `UPDATE … WHERE status <> :new`, so `statusChangedAt` changes only on a real move.
 - API on port 3001 (`API_PORT`), CORS for `WEB_ORIGIN` (default `http://localhost:3000`).
 
@@ -75,7 +76,6 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - The board never loads the whole table, only 5 tasks per column, then more for one column on scroll.
 - Keyset pagination stays fast at any depth and doesn't skip or repeat rows when tasks are added or moved between page loads. Offset pagination would do both.
 - The cursor is opaque because the client only needs to pass `nextCursor` back. A bare timestamp would break on ties.
-- The same response shape for one or all columns lets the frontend merge pages without special cases.
 
 **Trade-offs:** A task moved into a column while the user is paging lands above the loaded pages, so the client must insert its own moves locally. The index is `(status, status_changed_at)` without `id`, so ties are resolved after the index lookup, which is fine at this scale.
 
@@ -119,4 +119,4 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - Independent columns: one failing or paging column doesn't affect the others, and each maps directly onto one infinite query.
 - Data is fetched in the browser, so the page itself stays static, and the loading and error states the assignment requires live in one place.
 
-**Trade-offs:** The initial load is 3 parallel requests, not one `status=all` request. The API still supports `status=all`; it could seed the three caches later if one request matters.
+**Trade-offs:** The initial load is 3 parallel requests, one per column. `status=all` was removed from the API as a result (see D5).

@@ -11,6 +11,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { fetchColumnPage } from "@/lib/api";
 import type { TaskStatus } from "@/lib/tasks";
+import { TaskCard } from "./TaskCard";
 
 interface TaskColumnProps {
   status: TaskStatus;
@@ -64,10 +65,19 @@ export function TaskColumn({ status, title }: TaskColumnProps) {
         {title}
       </Typography>
 
-      <Stack spacing={1} sx={{ px: 1.5, pb: 1.5, overflowY: "auto", flex: 1 }}>
+      <Stack
+        spacing={1}
+        sx={{
+          px: 1.5,
+          pb: 1.5,
+          overflowY: "auto",
+          flex: 1,
+          "& > *": { flexShrink: 0 },
+        }}
+      >
         {query.isPending ? (
           Array.from({ length: 3 }, (_, i) => (
-            <Skeleton key={i} variant="rounded" height={88} />
+            <Skeleton key={i} variant="rounded" height={104} />
           ))
         ) : query.isError && tasks.length === 0 ? (
           <Alert
@@ -93,11 +103,7 @@ export function TaskColumn({ status, title }: TaskColumnProps) {
             Нет задач
           </Typography>
         ) : (
-          tasks.map((task) => (
-            <Paper key={task.id} variant="outlined" sx={{ p: 1.5 }}>
-              <Typography variant="body2">{task.title}</Typography>
-            </Paper>
-          ))
+          tasks.map((task) => <TaskCard key={task.id} task={task} />)
         )}
 
         {query.isFetchNextPageError && (

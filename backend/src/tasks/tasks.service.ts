@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { TaskStatus } from '../generated/prisma/enums.js';
 import { Prisma, type Task } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { decodeCursor, encodeCursor, type TaskCursor } from './task-cursor.js';
+import { decodeCursor, encodeCursor } from './task-cursor.js';
 import type {
   CreateTaskInput,
   ListTasksQuery,
@@ -27,21 +26,32 @@ export interface TaskPage {
   nextCursor: string | null;
 }
 
-export type TaskBoard = Partial<Record<TaskStatus, TaskPage>>;
-
 @Injectable()
 export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(query: ListTasksQuery): Promise<TaskBoard> {
-    const statuses =
-      query.status === 'all' ? Object.values(TaskStatus) : [query.status];
-    const cursor = query.cursor ? decodeCursor(query.cursor) : undefined;
+  async list({ status, limit, cursor }: ListTasksQuery): Promise<TaskPage> {
+    const after = cursor ? decodeCursor(cursor) : undefined;
+    const rows = await this.prisma.task.findMany({
+      where: {
+        status,
+        ...(after && {
+          OR: [
+            { statusChangedAt: { lt: after.statusChangedAt } },
+            { statusChangedAt: after.statusChangedAt, id: { lt: after.id } },
+          ],
+        }),
+      },
+      orderBy: [{ statusChangedAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+    });
 
-    const pages = await Promise.all(
-      statuses.map((status) => this.listColumn(status, query.limit, cursor)),
-    );
-    return Object.fromEntries(statuses.map((status, i) => [status, pages[i]]));
+    const items = rows.slice(0, limit);
+    const last = items.at(-1);
+    return {
+      items,
+      nextCursor: rows.length > limit && last ? encodeCursor(last) : null,
+    };
   }
 
   create(input: CreateTaskInput): Promise<Task> {
@@ -81,32 +91,5 @@ export class TasksService {
     } catch (error) {
       rethrowNotFound(error, id);
     }
-  }
-
-  private async listColumn(
-    status: TaskStatus,
-    limit: number,
-    cursor?: TaskCursor,
-  ): Promise<TaskPage> {
-    const rows = await this.prisma.task.findMany({
-      where: {
-        status,
-        ...(cursor && {
-          OR: [
-            { statusChangedAt: { lt: cursor.statusChangedAt } },
-            { statusChangedAt: cursor.statusChangedAt, id: { lt: cursor.id } },
-          ],
-        }),
-      },
-      orderBy: [{ statusChangedAt: 'desc' }, { id: 'desc' }],
-      take: limit + 1,
-    });
-
-    const items = rows.slice(0, limit);
-    const last = items.at(-1);
-    return {
-      items,
-      nextCursor: rows.length > limit && last ? encodeCursor(last) : null,
-    };
   }
 }
