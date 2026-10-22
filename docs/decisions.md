@@ -120,3 +120,19 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - Data is fetched in the browser, so the page itself stays static, and the loading and error states the assignment requires live in one place.
 
 **Trade-offs:** The initial load is 3 parallel requests, one per column. `status=all` was removed from the API as a result (see D5).
+
+## D9. Card shows title and priority; details in a separate read-only dialog
+
+**Decision:**
+- The card shows only the title, the priority chip and the edit/delete icon buttons. The description is shown only in the detail dialog.
+- Clicking anywhere on the card opens `TaskDetailsDialog`: title, priority, status, created date (ru-RU format), full description, and Edit and Delete buttons at the bottom. Closing is a cross icon in the top-right corner, not a bottom button, so it doesn't compete with the real actions. The cross, a backdrop click and Escape all use the same `onClose`. On phones (below `sm`) the dialog is full-screen.
+- The card is clickable through its title button stretched over the whole card (`::after` overlay), with the icon buttons layered above it. Hovering highlights the card (`grey.100`) and shows a pointer cursor.
+- The detail view is separate from the future editor.
+- Each card keeps its own `open` state.
+
+**Why:**
+- Keeps cards compact, so more fit in a column.
+- The stretched title button keeps the whole card clickable without nesting buttons inside a button, which breaks accessibility, and keyboard users get a real focusable button.
+- State per card is the least code for now.
+
+**Trade-offs:** No URL for an open task. Moving the open state into the URL is listed in `docs/ideas.md`.

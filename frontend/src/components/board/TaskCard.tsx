@@ -1,57 +1,64 @@
+"use client";
+
+import { useState } from "react";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import ButtonBase from "@mui/material/ButtonBase";
 import Card from "@mui/material/Card";
-import Chip, { type ChipProps } from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import {
-  DESCRIPTION_PREVIEW_LENGTH,
-  PRIORITY_LABELS,
-  previewText,
-  type Task,
-  type TaskPriority,
-} from "@/lib/tasks";
-
-const PRIORITY_COLORS: Record<TaskPriority, ChipProps["color"]> = {
-  low: "default",
-  normal: "info",
-  high: "error",
-};
+import type { Task } from "@/lib/tasks";
+import { PriorityChip } from "./PriorityChip";
+import { TaskDetailsDialog } from "./TaskDetailsDialog";
 
 export function TaskCard({ task }: { task: Task }) {
-  const description = previewText(task.description, DESCRIPTION_PREVIEW_LENGTH);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
-    <Card component="article" variant="outlined" sx={{ p: 1.5 }}>
-      <Typography
-        variant="subtitle1"
-        component="h3"
-        sx={{ fontWeight: 500, lineHeight: 1.3, overflowWrap: "anywhere" }}
+    <Card
+      component="article"
+      variant="outlined"
+      sx={{
+        position: "relative",
+        p: 1.5,
+        cursor: "pointer",
+        transition: (theme) =>
+          theme.transitions.create("background-color", {
+            duration: theme.transitions.duration.shortest,
+          }),
+        "&:hover": { bgcolor: "grey.100" },
+        "&:has(:focus-visible)": {
+          outline: (theme) => `2px solid ${theme.palette.primary.main}`,
+          outlineOffset: "-2px",
+        },
+      }}
+    >
+      <ButtonBase
+        disableRipple
+        onClick={() => setDetailsOpen(true)}
+        sx={{
+          position: "static",
+          display: "block",
+          textAlign: "left",
+          "&::after": { content: '""', position: "absolute", inset: 0 },
+        }}
       >
-        {task.title}
-      </Typography>
-
-      {description && (
         <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mt: 0.5, overflowWrap: "anywhere" }}
+          variant="subtitle1"
+          component="h3"
+          sx={{ fontWeight: 500, lineHeight: 1.3, overflowWrap: "anywhere" }}
         >
-          {description}
+          {task.title}
         </Typography>
-      )}
+      </ButtonBase>
 
       <Stack
         direction="row"
         sx={{ mt: 1, alignItems: "center", justifyContent: "space-between" }}
       >
-        <Chip
-          size="small"
-          label={PRIORITY_LABELS[task.priority]}
-          color={PRIORITY_COLORS[task.priority]}
-        />
-        <Stack direction="row">
+        <PriorityChip priority={task.priority} />
+        <Stack direction="row" sx={{ position: "relative", zIndex: 1 }}>
           <IconButton size="small" aria-label="Редактировать" disabled>
             <EditOutlinedIcon fontSize="small" />
           </IconButton>
@@ -60,6 +67,12 @@ export function TaskCard({ task }: { task: Task }) {
           </IconButton>
         </Stack>
       </Stack>
+
+      <TaskDetailsDialog
+        task={task}
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+      />
     </Card>
   );
 }

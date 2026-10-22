@@ -9,6 +9,7 @@ Kanban task tracker, built as a test assignment (spec: `docs/assignment.md`).
 - `backend/` — NestJS API (TypeScript)
 - `frontend/` — Next.js + React + Material UI
 - `docs/decisions.md` — decision log; the source of truth for agreed choices. Check it before proposing alternatives, and add an entry when a new decision is made.
+- `docs/ideas.md` — improvement ideas beyond the current scope. Add to it when the user asks or a deferred idea comes up; don't implement from it unasked.
 
 ## Local environment
 

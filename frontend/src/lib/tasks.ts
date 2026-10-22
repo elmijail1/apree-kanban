@@ -20,11 +20,11 @@ export interface TaskPage {
   nextCursor: string | null;
 }
 
-export const COLUMNS: ReadonlyArray<{ status: TaskStatus; title: string }> = [
-  { status: "new", title: "Новая" },
-  { status: "inProgress", title: "В работе" },
-  { status: "completed", title: "Готово" },
-];
+export const STATUS_LABELS: Record<TaskStatus, string> = {
+  new: "Новая",
+  inProgress: "В работе",
+  completed: "Готово",
+};
 
 export const PRIORITY_LABELS: Record<TaskPriority, string> = {
   low: "Низкий",
@@ -32,12 +32,7 @@ export const PRIORITY_LABELS: Record<TaskPriority, string> = {
   high: "Высокий",
 };
 
-export const PAGE_SIZE = 5;
-export const DESCRIPTION_PREVIEW_LENGTH = 50;
+export const COLUMNS: ReadonlyArray<{ status: TaskStatus; title: string }> =
+  TASK_STATUSES.map((status) => ({ status, title: STATUS_LABELS[status] }));
 
-export function previewText(text: string, maxLength: number): string {
-  const chars = Array.from(text.trim());
-  return chars.length > maxLength
-    ? `${chars.slice(0, maxLength).join("").trimEnd()}…`
-    : chars.join("");
-}
+export const PAGE_SIZE = 5;
