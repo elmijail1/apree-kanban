@@ -28,3 +28,10 @@ Kanban task tracker, built as a test assignment (spec: `docs/assignment.md`).
 - The generated client (`backend/src/generated/prisma`) is gitignored. Don't edit it. Regenerate with `db:generate`.
 - Use camelCase in Prisma models and snake_case in the DB (`@map`/`@@map`).
 - `statusChangedAt` must be set by the service when, and only when, `status` changes (see D4 in `docs/decisions.md`).
+
+## Backend conventions
+
+- ESM with `nodenext`: relative imports need the `.js` extension (`./tasks.service.js`).
+- Validate every request part (body, query, params) with a Zod schema via `ZodValidationPipe`. Schemas and their inferred types live in `<module>.schemas.ts`. Validate route ids with `ParseUUIDPipe`.
+- Inject `PrismaService` (global module). Don't create `PrismaClient` elsewhere.
+- Format with `pnpm exec prettier --write src`; check with `pnpm exec tsc --noEmit -p tsconfig.json` and `pnpm lint`.
