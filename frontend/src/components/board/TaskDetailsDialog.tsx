@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type SubmitEvent, type ReactNode } from "react";
+import { useState, type SubmitEvent } from "react";
 import { z } from "zod";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -14,29 +14,26 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { amber } from "@mui/material/colors";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import { useMoveTask, useUpdateTask } from "@/lib/taskMutations";
+import { taskContentSchema, type TaskPatch } from "@/lib/taskSchema";
 import {
-  DESCRIPTION_MAX,
-  TITLE_MAX,
-  taskContentSchema,
-  type TaskPatch,
-} from "@/lib/taskSchema";
-import {
-  PRIORITY_LABELS,
   STATUS_LABELS,
-  TASK_PRIORITIES,
   TASK_STATUSES,
   type Task,
   type TaskPriority,
   type TaskStatus,
 } from "@/lib/tasks";
 import { ChipPicker } from "./ChipPicker";
-import { PRIORITY_COLORS } from "./PriorityChip";
+import {
+  DescriptionField,
+  Field,
+  PriorityPicker,
+  TitleField,
+} from "./TaskFormFields";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "long",
@@ -186,18 +183,10 @@ function DetailsContent({
         sx={{ pr: editing ? 3 : 7, overflowWrap: "anywhere" }}
       >
         {editing ? (
-          <TextField
-            variant="standard"
-            fullWidth
-            autoFocus
+          <TitleField
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            error={Boolean(errors.title)}
-            helperText={errors.title?.[0] ?? `${title.length}/${TITLE_MAX}`}
-            slotProps={{
-              htmlInput: { "aria-label": "Название" },
-              input: { sx: { typography: "h6" } },
-            }}
+            onChange={setTitle}
+            error={errors.title?.[0]}
           />
         ) : (
           task.title
@@ -217,12 +206,8 @@ function DetailsContent({
         <Stack spacing={2}>
           <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }}>
             <Field label="Приоритет">
-              <ChipPicker
-                name="Приоритет"
+              <PriorityPicker
                 value={shownPriority}
-                options={TASK_PRIORITIES}
-                getLabel={(option) => PRIORITY_LABELS[option]}
-                getChipProps={(option) => ({ color: PRIORITY_COLORS[option] })}
                 onChange={changePriority}
                 disabled={saving}
               />
@@ -247,22 +232,10 @@ function DetailsContent({
 
           <Field label="Описание" stretch>
             {editing ? (
-              <TextField
-                multiline
-                minRows={3}
-                fullWidth
-                placeholder="Добавьте описание"
+              <DescriptionField
                 value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                error={Boolean(errors.description)}
-                helperText={
-                  errors.description?.[0] ??
-                  `${description.length}/${DESCRIPTION_MAX}`
-                }
-                slotProps={{
-                  htmlInput: { "aria-label": "Описание" },
-                  input: { sx: { bgcolor: "background.paper" } },
-                }}
+                onChange={setDescription}
+                error={errors.description?.[0]}
               />
             ) : task.description ? (
               <Typography
@@ -317,27 +290,5 @@ function DetailsContent({
         )}
       </DialogActions>
     </Box>
-  );
-}
-
-function Field({
-  label,
-  children,
-  stretch = false,
-}: {
-  label: string;
-  children: ReactNode;
-  stretch?: boolean;
-}) {
-  return (
-    <Stack
-      spacing={0.5}
-      sx={{ alignItems: stretch ? "stretch" : "flex-start" }}
-    >
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      {children}
-    </Stack>
   );
 }

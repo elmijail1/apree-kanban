@@ -1,9 +1,8 @@
-import AddIcon from "@mui/icons-material/Add";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { COLUMNS } from "@/lib/tasks";
+import { AddTaskButton } from "./AddTaskButton";
 import { TaskColumn } from "./TaskColumn";
 import { TaskDialogsProvider } from "./TaskDialogs";
 
@@ -25,9 +24,7 @@ export function Board() {
           <Typography variant="h5" component="h1">
             Задачи
           </Typography>
-          <Button variant="contained" startIcon={<AddIcon />}>
-            Добавить задачу
-          </Button>
+          <AddTaskButton />
         </Stack>
 
         <Box

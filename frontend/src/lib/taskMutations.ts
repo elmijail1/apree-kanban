@@ -4,7 +4,13 @@ import {
   type InfiniteData,
   type QueryClient,
 } from "@tanstack/react-query";
-import { ApiError, deleteTask, updateTask, updateTaskStatus } from "./api";
+import {
+  ApiError,
+  createTask,
+  deleteTask,
+  updateTask,
+  updateTaskStatus,
+} from "./api";
 import type { TaskPatch } from "./taskSchema";
 import type { Task, TaskPage, TaskStatus } from "./tasks";
 
@@ -24,6 +30,19 @@ function updateColumnItems(
           ...page,
           items: update(page.items),
         })),
+      },
+  );
+}
+
+function prependToColumn(queryClient: QueryClient, task: Task) {
+  queryClient.setQueryData<ColumnData>(
+    ["tasks", task.status],
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page, index) =>
+          index === 0 ? { ...page, items: [task, ...page.items] } : page,
+        ),
       },
   );
 }
@@ -52,17 +71,16 @@ export function useMoveTask() {
       updateColumnItems(queryClient, task.status, (items) =>
         items.filter((item) => item.id !== moved.id),
       );
-      queryClient.setQueryData<ColumnData>(
-        ["tasks", moved.status],
-        (data) =>
-          data && {
-            ...data,
-            pages: data.pages.map((page, index) =>
-              index === 0 ? { ...page, items: [moved, ...page.items] } : page,
-            ),
-          },
-      );
+      prependToColumn(queryClient, moved);
     },
+  });
+}
+
+export function useCreateTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createTask,
+    onSuccess: (created) => prependToColumn(queryClient, created),
   });
 }
 

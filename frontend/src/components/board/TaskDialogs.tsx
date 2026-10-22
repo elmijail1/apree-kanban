@@ -2,12 +2,13 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
 import type { Task } from "@/lib/tasks";
+import { CreateTaskDialog } from "./CreateTaskDialog";
 import { DeleteTaskDialog } from "./DeleteTaskDialog";
 import { TaskDetailsDialog } from "./TaskDetailsDialog";
 
@@ -16,16 +17,19 @@ export type DialogView =
   | { kind: "edit"; from: "column" | "details" }
   | { kind: "delete" };
 
-type OpenTask = (task: Task, view: DialogView) => void;
+interface TaskDialogs {
+  openTask: (task: Task, view: DialogView) => void;
+  openCreate: () => void;
+}
 
-const OpenTaskContext = createContext<OpenTask | null>(null);
+const TaskDialogsContext = createContext<TaskDialogs | null>(null);
 
-export function useOpenTask(): OpenTask {
-  const openTask = useContext(OpenTaskContext);
-  if (!openTask) {
-    throw new Error("useOpenTask must be used inside TaskDialogsProvider");
+export function useTaskDialogs(): TaskDialogs {
+  const dialogs = useContext(TaskDialogsContext);
+  if (!dialogs) {
+    throw new Error("useTaskDialogs must be used inside TaskDialogsProvider");
   }
-  return openTask;
+  return dialogs;
 }
 
 interface DialogState {
@@ -36,8 +40,12 @@ interface DialogState {
 
 export function TaskDialogsProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<DialogState | null>(null);
-  const openTask = useCallback<OpenTask>(
-    (task, view) => setState({ task, view, open: true }),
+  const [creating, setCreating] = useState(false);
+  const dialogs = useMemo<TaskDialogs>(
+    () => ({
+      openTask: (task, view) => setState({ task, view, open: true }),
+      openCreate: () => setCreating(true),
+    }),
     [],
   );
 
@@ -56,8 +64,9 @@ export function TaskDialogsProvider({ children }: { children: ReactNode }) {
     view?.kind === "edit" && view.from === "details" ? showDetails() : close();
 
   return (
-    <OpenTaskContext.Provider value={openTask}>
+    <TaskDialogsContext.Provider value={dialogs}>
       {children}
+      <CreateTaskDialog open={creating} onClose={() => setCreating(false)} />
       {state && (
         <>
           <TaskDetailsDialog
@@ -78,6 +87,6 @@ export function TaskDialogsProvider({ children }: { children: ReactNode }) {
           />
         </>
       )}
-    </OpenTaskContext.Provider>
+    </TaskDialogsContext.Provider>
   );
 }

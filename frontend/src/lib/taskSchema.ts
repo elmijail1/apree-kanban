@@ -17,4 +17,5 @@ export const taskContentSchema = z.object({
 });
 export type TaskContent = z.output<typeof taskContentSchema>;
 
-export type TaskPatch = Partial<TaskContent> & { priority?: TaskPriority };
+export type NewTask = TaskContent & { priority: TaskPriority };
+export type TaskPatch = Partial<NewTask>;

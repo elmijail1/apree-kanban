@@ -190,3 +190,21 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 **Trade-offs:**
 - Saving in edit mode isn't atomic. If the content saves and the move fails, the content stays saved and the dialog stays in edit mode with an error; saving again retries the move.
 - The dialog shows a copy of the task taken when it was opened, refreshed only by its own mutations. If a column re-fetches meanwhile, the dialog doesn't update.
+
+## D13. Create-task dialog
+
+**Decision:**
+- «Добавить задачу» opens `CreateTaskDialog`. It has the editor's layout without the edit-mode styling:
+  - white background and no banner;
+  - an empty underlined title field with the placeholder «Название задачи»;
+  - a priority chip that starts as «Выберите…» (no default);
+  - the editor's description field;
+  - «Отмена» / «Сохранить».
+- No status or created date: new tasks always start in `new` (the API default).
+- The close cross, a backdrop click and Escape all work like «Отмена»: they discard the form and close the dialog.
+- «Сохранить» stays disabled until the title is valid and a priority is chosen. The empty-title error appears only after the user has typed in the field, so a fresh form doesn't open with an error.
+- On success the dialog closes and the task goes to the top of the cached «Новая» column. That's where the server sorts it, so there's no re-fetch.
+- The title field, description field, priority picker and field label are shared with the editor (`TaskFormFields.tsx`). `ChipPicker` supports an empty value with a placeholder for this.
+- The provider exposes `openCreate()` next to `openTask()`. The header button is a small client `AddTaskButton`, so `Board` stays a server component.
+
+**Why:** A forced priority choice was asked for explicitly («Выберите…»). The API also requires it, so there's no default to fall back on. Sharing the fields keeps creating and editing identical by construction.

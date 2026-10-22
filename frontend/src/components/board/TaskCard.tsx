@@ -9,10 +9,10 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { Task } from "@/lib/tasks";
 import { PriorityChip } from "./PriorityChip";
-import { useOpenTask } from "./TaskDialogs";
+import { useTaskDialogs } from "./TaskDialogs";
 
 export function TaskCard({ task }: { task: Task }) {
-  const openTask = useOpenTask();
+  const { openTask } = useTaskDialogs();
 
   return (
     <Card
