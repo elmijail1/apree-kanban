@@ -10,14 +10,7 @@ import { TaskDialogsProvider } from "./TaskDialogs";
 export function Board() {
   return (
     <TaskDialogsProvider>
-      <Stack
-        component="main"
-        spacing={2}
-        sx={{
-          p: { xs: 2, md: 3 },
-          height: { md: "100dvh" },
-        }}
-      >
+      <Stack component="main" spacing={2} sx={{ p: { xs: 2, md: 3 } }}>
         <Stack
           direction="row"
           sx={{ alignItems: "center", justifyContent: "space-between", gap: 2 }}
@@ -35,9 +28,9 @@ export function Board() {
               xs: "1fr",
               md: "repeat(3, minmax(0, 1fr))",
             },
-            gap: 2,
-            flex: 1,
-            minHeight: 0,
+            gap: { xs: 3, md: 2 },
+            pr: { xs: 8, md: 0 },
+            alignItems: "start",
           }}
         >
           <BoardDnd>

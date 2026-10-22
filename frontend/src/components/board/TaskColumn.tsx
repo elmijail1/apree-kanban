@@ -15,6 +15,18 @@ import { fetchColumnPage } from "@/lib/api";
 import type { TaskStatus } from "@/lib/tasks";
 import { TaskCard, type DraggedTask } from "./TaskCard";
 
+const CARD_HEIGHT = 85;
+const CARD_GAP = 8;
+const LIST_PADDING_BOTTOM = 16;
+const BOTTOM_FADE_HEIGHT = 24;
+
+const listHeight = (visibleCards: number) =>
+  Math.round(
+    visibleCards * CARD_HEIGHT +
+      (Math.ceil(visibleCards) - 1) * CARD_GAP +
+      LIST_PADDING_BOTTOM,
+  );
+
 interface TaskColumnProps {
   status: TaskStatus;
   title: string;
@@ -58,9 +70,25 @@ export function TaskColumn({ status, title }: TaskColumnProps) {
       aria-label={title}
       variant="outlined"
       sx={{
+        position: "relative",
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
+        "&::after": {
+          content: '""',
+          display: isDropTarget ? "none" : "block",
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: BOTTOM_FADE_HEIGHT,
+          borderRadius: "inherit",
+          borderTopLeftRadius: 0,
+          borderTopRightRadius: 0,
+          pointerEvents: "none",
+          background: (theme) =>
+            `linear-gradient(to bottom, ${alpha(theme.palette.grey[50], 0)}, ${theme.palette.grey[50]})`,
+        },
         bgcolor: (theme) =>
           isDropTarget
             ? alpha(theme.palette.primary.main, 0.08)
@@ -86,15 +114,16 @@ export function TaskColumn({ status, title }: TaskColumnProps) {
         spacing={1}
         sx={{
           px: 1.5,
-          pb: 1.5,
+          pb: `${LIST_PADDING_BOTTOM}px`,
           overflowY: "auto",
-          flex: 1,
+          maxHeight: { xs: listHeight(2.6), md: listHeight(4.5) },
+          height: { md: listHeight(4.5) },
           "& > *": { flexShrink: 0 },
         }}
       >
         {query.isPending ? (
           Array.from({ length: 3 }, (_, i) => (
-            <Skeleton key={i} variant="rounded" height={104} />
+            <Skeleton key={i} variant="rounded" height={CARD_HEIGHT} />
           ))
         ) : query.isError && tasks.length === 0 ? (
           <Alert

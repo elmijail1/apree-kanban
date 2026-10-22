@@ -112,6 +112,12 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 
 **Decision:**
 - `Board` is a server component: the header, the "Добавить задачу" button and a responsive grid (one column on mobile, three on `md`+, each column scrolling on its own).
+- **Column heights** are sized in cards (single-line card ≈ 85px, gap 8px), so the next-page sentinel starts out of view:
+  - **Desktop:** a fixed list height of ≈ 4.5 cards (431px; `maxHeight` is set per breakpoint, because an `xs` value would also apply on `md`). All 5 cards of the first page fit, with the 5th partly cut off. Columns are equal height and don't stretch to the viewport.
+  - **Mobile:** a maximum of ≈ 2.6 cards (253px). This keeps stacked columns short, so it's easy to scroll past one to the next. Empty or short columns shrink to their content.
+  - **Mobile spacing:** 24px between stacked columns (16px on desktop), and 32px of extra right padding on the column grid. Together with the page padding, that leaves a 48px strip on the right for scrolling the page without catching a column's own scroll.
+  - **Bottom fade:** every column has a 24px gradient overlay at its bottom edge, fading to the column background (`::after` at `left/right/bottom: 0`, `pointer-events: none`; absolute offsets count from inside the border, so a 1px offset left a gap where the card underneath showed as a line). It's hidden while the column is a drop target. The list's bottom padding is 16px, so at the very end the fade mostly covers empty space.
+  - *Revised:* columns originally filled the viewport height on desktop. On a tall screen all 5 cards and the sentinel were visible at once, so the second page loaded immediately.
 - `TaskColumn` is a client component. Each column runs its own `useInfiniteQuery` (`['tasks', status]`, `GET /tasks?status=<status>&limit=5`), loads the next page when a sentinel at the bottom of its list scrolls into view, and has its own loading (skeletons), error (with retry) and empty states.
 - Cards are client components, because they render data fetched in the browser.
 
