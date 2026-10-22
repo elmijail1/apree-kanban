@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
-import { useDroppable } from "@dnd-kit/core";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
-import Paper from "@mui/material/Paper";
-import Skeleton from "@mui/material/Skeleton";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import { alpha } from "@mui/material/styles";
-import { fetchColumnPage } from "@/lib/api";
-import type { TaskStatus } from "@/lib/tasks";
-import { TaskCard, type DraggedTask } from "./TaskCard";
+import { useEffect, useRef } from 'react';
+import { useDroppable } from '@dnd-kit/core';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import Paper from '@mui/material/Paper';
+import Skeleton from '@mui/material/Skeleton';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import { alpha } from '@mui/material/styles';
+import { fetchColumnPage } from '@/lib/api';
+import type { TaskStatus } from '@/lib/tasks';
+import { TaskCard, type DraggedTask } from './TaskCard';
 
 const CARD_HEIGHT = 85;
 const CARD_GAP = 8;
@@ -34,7 +34,7 @@ interface TaskColumnProps {
 
 export function TaskColumn({ status, title }: TaskColumnProps) {
   const query = useInfiniteQuery({
-    queryKey: ["tasks", status],
+    queryKey: ['tasks', status],
     queryFn: ({ pageParam, signal }) =>
       fetchColumnPage(status, pageParam, signal),
     initialPageParam: null as string | null,
@@ -70,22 +70,22 @@ export function TaskColumn({ status, title }: TaskColumnProps) {
       aria-label={title}
       variant="outlined"
       sx={{
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
         minHeight: 0,
-        "&::after": {
+        '&::after': {
           content: '""',
-          display: isDropTarget ? "none" : "block",
-          position: "absolute",
+          display: isDropTarget ? 'none' : 'block',
+          position: 'absolute',
           left: 0,
           right: 0,
           bottom: 0,
           height: BOTTOM_FADE_HEIGHT,
-          borderRadius: "inherit",
+          borderRadius: 'inherit',
           borderTopLeftRadius: 0,
           borderTopRightRadius: 0,
-          pointerEvents: "none",
+          pointerEvents: 'none',
           background: (theme) =>
             `linear-gradient(to bottom, ${alpha(theme.palette.grey[50], 0)}, ${theme.palette.grey[50]})`,
         },
@@ -93,11 +93,11 @@ export function TaskColumn({ status, title }: TaskColumnProps) {
           isDropTarget
             ? alpha(theme.palette.primary.main, 0.08)
             : theme.palette.grey[50],
-        borderColor: isDropTarget ? "primary.main" : undefined,
-        outline: isDropTarget ? "1px solid" : "none",
-        outlineColor: "primary.main",
+        borderColor: isDropTarget ? 'primary.main' : undefined,
+        outline: isDropTarget ? '1px solid' : 'none',
+        outlineColor: 'primary.main',
         transition: (theme) =>
-          theme.transitions.create(["background-color", "border-color"], {
+          theme.transitions.create(['background-color', 'border-color'], {
             duration: theme.transitions.duration.shortest,
           }),
       }}
@@ -115,10 +115,10 @@ export function TaskColumn({ status, title }: TaskColumnProps) {
         sx={{
           px: 1.5,
           pb: `${LIST_PADDING_BOTTOM}px`,
-          overflowY: "auto",
+          overflowY: 'auto',
           maxHeight: { xs: listHeight(2.6), md: listHeight(4.5) },
           height: { md: listHeight(4.5) },
-          "& > *": { flexShrink: 0 },
+          '& > *': { flexShrink: 0 },
         }}
       >
         {query.isPending ? (
@@ -144,7 +144,7 @@ export function TaskColumn({ status, title }: TaskColumnProps) {
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ py: 3, textAlign: "center" }}
+            sx={{ py: 3, textAlign: 'center' }}
           >
             Нет задач
           </Typography>
@@ -169,7 +169,7 @@ export function TaskColumn({ status, title }: TaskColumnProps) {
           </Alert>
         )}
         {isFetchingNextPage && (
-          <CircularProgress size={24} sx={{ alignSelf: "center" }} />
+          <CircularProgress size={24} sx={{ alignSelf: 'center' }} />
         )}
         <div ref={sentinelRef} />
       </Stack>

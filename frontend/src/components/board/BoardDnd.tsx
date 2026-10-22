@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -11,13 +11,13 @@ import {
   type Announcements,
   type DragEndEvent,
   type DragStartEvent,
-} from "@dnd-kit/core";
-import Alert from "@mui/material/Alert";
-import Snackbar from "@mui/material/Snackbar";
-import { useMoveTask } from "@/lib/taskMutations";
-import { STATUS_LABELS, type Task, type TaskStatus } from "@/lib/tasks";
-import { theme } from "@/theme";
-import { TaskCardView, type DraggedTask } from "./TaskCard";
+} from '@dnd-kit/core';
+import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/material/Snackbar';
+import { useMoveTask } from '@/lib/taskMutations';
+import { STATUS_LABELS, type Task, type TaskStatus } from '@/lib/tasks';
+import { theme } from '@/theme';
+import { TaskCardView, type DraggedTask } from './TaskCard';
 
 const DESKTOP_QUERY = `(min-width: ${theme.breakpoints.values.md}px) and (hover: hover) and (pointer: fine)`;
 
@@ -36,14 +36,14 @@ const taskOf = (data: unknown) => (data as DraggedTask | undefined)?.task;
 
 const announcements: Announcements = {
   onDragStart: ({ active }) =>
-    `Задача «${taskOf(active.data.current)?.title ?? ""}» взята`,
+    `Задача «${taskOf(active.data.current)?.title ?? ''}» взята`,
   onDragOver: ({ over }) =>
     over ? `Над колонкой «${STATUS_LABELS[over.id as TaskStatus]}»` : undefined,
   onDragEnd: ({ over }) =>
     over
       ? `Задача перемещена в колонку «${STATUS_LABELS[over.id as TaskStatus]}»`
-      : "Перемещение отменено",
-  onDragCancel: () => "Перемещение отменено",
+      : 'Перемещение отменено',
+  onDragCancel: () => 'Перемещение отменено',
 };
 
 export function BoardDnd({ children }: { children: ReactNode }) {

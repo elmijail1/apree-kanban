@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import { useDeleteTask } from "@/lib/taskMutations";
-import type { Task } from "@/lib/tasks";
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+import { useDeleteTask } from '@/lib/taskMutations';
+import type { Task } from '@/lib/tasks';
 
 interface DeleteTaskDialogProps {
   task: Task;
@@ -32,7 +32,7 @@ export function DeleteTaskDialog({
 
   return (
     <Dialog open={open} onClose={close} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ overflowWrap: "anywhere" }}>
+      <DialogTitle sx={{ overflowWrap: 'anywhere' }}>
         Вы уверены, что хотите удалить «{task.title}»?
       </DialogTitle>
       <DialogContent>

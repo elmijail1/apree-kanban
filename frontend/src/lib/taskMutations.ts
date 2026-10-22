@@ -1,15 +1,15 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ApiError, createTask, deleteTask, updateTask } from "./api";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ApiError, createTask, deleteTask, updateTask } from './api';
 import {
   prependTask,
   removeTask,
   replaceTask,
   type ColumnData,
-} from "./taskCache";
-import type { TaskPatch } from "./taskSchema";
-import type { Task, TaskStatus } from "./tasks";
+} from './taskCache';
+import type { TaskPatch } from './taskSchema';
+import type { Task, TaskStatus } from './tasks';
 
-const columnKey = (status: TaskStatus) => ["tasks", status];
+const columnKey = (status: TaskStatus) => ['tasks', status];
 
 export function useUpdateTask() {
   const queryClient = useQueryClient();

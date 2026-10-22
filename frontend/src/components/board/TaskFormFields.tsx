@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import { DESCRIPTION_MAX, TITLE_MAX } from "@/lib/taskSchema";
+import type { ReactNode } from 'react';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import { DESCRIPTION_MAX, TITLE_MAX } from '@/lib/taskSchema';
 import {
   PRIORITY_LABELS,
   TASK_PRIORITIES,
   type TaskPriority,
-} from "@/lib/tasks";
-import { ChipPicker } from "./ChipPicker";
-import { PRIORITY_COLORS } from "./PriorityChip";
+} from '@/lib/tasks';
+import { ChipPicker } from './ChipPicker';
+import { PRIORITY_COLORS } from './PriorityChip';
 
 interface TextFieldProps {
   value: string;
@@ -36,8 +36,8 @@ export function TitleField({
       error={Boolean(error)}
       helperText={error ?? `${value.length}/${TITLE_MAX}`}
       slotProps={{
-        htmlInput: { "aria-label": "Название" },
-        input: { sx: { typography: "h6" } },
+        htmlInput: { 'aria-label': 'Название' },
+        input: { sx: { typography: 'h6' } },
       }}
     />
   );
@@ -55,8 +55,8 @@ export function DescriptionField({ value, onChange, error }: TextFieldProps) {
       error={Boolean(error)}
       helperText={error ?? `${value.length}/${DESCRIPTION_MAX}`}
       slotProps={{
-        htmlInput: { "aria-label": "Описание" },
-        input: { sx: { bgcolor: "background.paper" } },
+        htmlInput: { 'aria-label': 'Описание' },
+        input: { sx: { bgcolor: 'background.paper' } },
       }}
     />
   );
@@ -96,7 +96,7 @@ export function Field({
   return (
     <Stack
       spacing={0.5}
-      sx={{ alignItems: stretch ? "stretch" : "flex-start" }}
+      sx={{ alignItems: stretch ? 'stretch' : 'flex-start' }}
     >
       <Typography variant="caption" color="text.secondary">
         {label}

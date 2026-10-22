@@ -1,5 +1,5 @@
-import type { InfiniteData } from "@tanstack/react-query";
-import type { Task, TaskPage } from "./tasks";
+import type { InfiniteData } from '@tanstack/react-query';
+import type { Task, TaskPage } from './tasks';
 
 export type ColumnData = InfiniteData<TaskPage, string | null>;
 

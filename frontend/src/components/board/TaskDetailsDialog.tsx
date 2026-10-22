@@ -1,43 +1,43 @@
-"use client";
+'use client';
 
-import { useState, type SubmitEvent } from "react";
-import { z } from "zod";
-import CloseIcon from "@mui/icons-material/Close";
-import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import IconButton from "@mui/material/IconButton";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import { amber } from "@mui/material/colors";
-import useMediaQuery from "@mui/material/useMediaQuery";
-import { useTheme } from "@mui/material/styles";
-import { useMoveTask, useUpdateTask } from "@/lib/taskMutations";
-import { taskContentSchema, type TaskPatch } from "@/lib/taskSchema";
+import { useState, type SubmitEvent } from 'react';
+import { z } from 'zod';
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import { amber } from '@mui/material/colors';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
+import { useMoveTask, useUpdateTask } from '@/lib/taskMutations';
+import { taskContentSchema, type TaskPatch } from '@/lib/taskSchema';
 import {
   STATUS_LABELS,
   TASK_STATUSES,
   type Task,
   type TaskPriority,
   type TaskStatus,
-} from "@/lib/tasks";
-import { ChipPicker } from "./ChipPicker";
+} from '@/lib/tasks';
+import { ChipPicker } from './ChipPicker';
 import {
   DescriptionField,
   Field,
   PriorityPicker,
   TitleField,
-} from "./TaskFormFields";
+} from './TaskFormFields';
 
-const dateFormat = new Intl.DateTimeFormat("ru-RU", {
-  dateStyle: "long",
-  timeStyle: "short",
+const dateFormat = new Intl.DateTimeFormat('ru-RU', {
+  dateStyle: 'long',
+  timeStyle: 'short',
 });
 
 interface TaskDetailsDialogProps {
@@ -55,13 +55,13 @@ interface TaskDetailsDialogProps {
 export function TaskDetailsDialog(props: TaskDetailsDialogProps) {
   const { open, editing, onCancelEdit, onClose } = props;
   const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleClose = (
     _: unknown,
-    reason: "backdropClick" | "escapeKeyDown",
+    reason: 'backdropClick' | 'escapeKeyDown',
   ) => {
-    if (editing && reason === "escapeKeyDown") {
+    if (editing && reason === 'escapeKeyDown') {
       onCancelEdit();
     } else {
       onClose();
@@ -79,7 +79,7 @@ export function TaskDetailsDialog(props: TaskDetailsDialogProps) {
         paper: { sx: editing ? { bgcolor: amber[50] } : undefined },
       }}
     >
-      <DetailsContent key={editing ? "edit" : "view"} {...props} />
+      <DetailsContent key={editing ? 'edit' : 'view'} {...props} />
     </Dialog>
   );
 }
@@ -151,17 +151,17 @@ function DetailsContent({
 
   return (
     <Box
-      component={editing ? "form" : "div"}
+      component={editing ? 'form' : 'div'}
       noValidate
       onSubmit={editing ? handleSave : undefined}
-      sx={{ display: "contents" }}
+      sx={{ display: 'contents' }}
     >
       {editing && (
         <Stack
           direction="row"
           sx={{
-            alignItems: "center",
-            justifyContent: "space-between",
+            alignItems: 'center',
+            justifyContent: 'space-between',
             pl: 3,
             pr: 1.5,
             py: 0.5,
@@ -178,8 +178,8 @@ function DetailsContent({
       )}
 
       <DialogTitle
-        component={editing ? "div" : "h2"}
-        sx={{ pr: editing ? 3 : 7, overflowWrap: "anywhere" }}
+        component={editing ? 'div' : 'h2'}
+        sx={{ pr: editing ? 3 : 7, overflowWrap: 'anywhere' }}
       >
         {editing ? (
           <TitleField
@@ -195,7 +195,7 @@ function DetailsContent({
         <IconButton
           aria-label="Закрыть"
           onClick={onClose}
-          sx={{ position: "absolute", top: 12, right: 12 }}
+          sx={{ position: 'absolute', top: 12, right: 12 }}
         >
           <CloseIcon />
         </IconButton>
@@ -203,7 +203,7 @@ function DetailsContent({
 
       <DialogContent>
         <Stack spacing={2}>
-          <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }}>
+          <Stack direction="row" spacing={3} sx={{ flexWrap: 'wrap' }}>
             <Field label="Приоритет">
               <PriorityPicker
                 value={shownPriority}
@@ -217,7 +217,7 @@ function DetailsContent({
                 value={shownStatus}
                 options={TASK_STATUSES}
                 getLabel={(option) => STATUS_LABELS[option]}
-                getChipProps={() => ({ variant: "outlined" })}
+                getChipProps={() => ({ variant: 'outlined' })}
                 onChange={changeStatus}
                 disabled={saving}
               />
@@ -239,7 +239,7 @@ function DetailsContent({
             ) : task.description ? (
               <Typography
                 variant="body1"
-                sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+                sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
               >
                 {task.description}
               </Typography>

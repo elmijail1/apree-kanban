@@ -1,7 +1,7 @@
-export const TASK_STATUSES = ["new", "inProgress", "completed"] as const;
+export const TASK_STATUSES = ['new', 'inProgress', 'completed'] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
-export const TASK_PRIORITIES = ["low", "normal", "high"] as const;
+export const TASK_PRIORITIES = ['low', 'normal', 'high'] as const;
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 
 export interface Task {
@@ -21,15 +21,15 @@ export interface TaskPage {
 }
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
-  new: "🆕 Новая",
-  inProgress: "⚙️ В работе",
-  completed: "✅ Готово",
+  new: '🆕 Новая',
+  inProgress: '⚙️ В работе',
+  completed: '✅ Готово',
 };
 
 export const PRIORITY_LABELS: Record<TaskPriority, string> = {
-  low: "Низкий",
-  normal: "Средний",
-  high: "Высокий",
+  low: 'Низкий',
+  normal: 'Средний',
+  high: 'Высокий',
 };
 
 export const COLUMNS: ReadonlyArray<{ status: TaskStatus; title: string }> =
