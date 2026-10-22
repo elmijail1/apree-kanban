@@ -3,6 +3,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { COLUMNS } from "@/lib/tasks";
 import { AddTaskButton } from "./AddTaskButton";
+import { BoardDnd } from "./BoardDnd";
 import { TaskColumn } from "./TaskColumn";
 import { TaskDialogsProvider } from "./TaskDialogs";
 
@@ -39,13 +40,15 @@ export function Board() {
             minHeight: 0,
           }}
         >
-          {COLUMNS.map((column) => (
-            <TaskColumn
-              key={column.status}
-              status={column.status}
-              title={column.title}
-            />
-          ))}
+          <BoardDnd>
+            {COLUMNS.map((column) => (
+              <TaskColumn
+                key={column.status}
+                status={column.status}
+                title={column.title}
+              />
+            ))}
+          </BoardDnd>
         </Box>
       </Stack>
     </TaskDialogsProvider>

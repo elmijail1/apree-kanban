@@ -150,7 +150,7 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
   - Validation uses the same Zod limits as the API (`frontend/src/lib/taskSchema.ts`), with a character counter under each field.
   - Only changed fields are sent; with no changes, Save just leaves edit mode.
 - **Closing edit mode:**
-  - The close cross is hidden; «Отмена» is the explicit way out.
+  - The close cross sits at the right end of the edit-mode banner (the dialog's top-right corner in this mode). Like a backdrop click, it discards the edits and closes the dialog, wherever editing started.
   - «Отмена» and Escape go back to where editing started: the column if it was the card's edit icon, the detail view if it was the dialog's «Редактировать». The dialog state records this as `{ kind: "edit", from: "column" | "details" }`.
   - A backdrop click discards the edits and closes the dialog entirely.
   - A successful save returns to the detail view.
@@ -179,7 +179,7 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 **Decision:**
 - **Status picker:** the detail dialog's status chip works like the priority one (D11). In view mode a choice saves immediately through `PATCH /tasks/:id/status`. In edit mode it's part of the draft. Both pickers use one generic `ChipPicker`.
 - **Saving in edit mode** sends the content `PATCH` first (only if something changed), then the status `PATCH` (only if the status changed). There are two requests because the API keeps moves on their own endpoint (D5, D6).
-- **Cache after a move:** no re-fetch. The task is removed from the old column's cached pages and put at the top of the new column's first page. That's where the server sorts it, because its `statusChangedAt` is now the newest in that column, and the keyset cursors of later pages stay valid. Columns that were never loaded are left alone and fetch fresh data when they appear.
+- **Cache after a move:** no re-fetch. The task is removed from the old column's cached pages and put at the top of the new column's first page. That's where the server sorts it, because its `statusChangedAt` is now the newest in that column, and the keyset cursors of later pages stay valid. Columns that were never loaded are left alone and fetch fresh data when they appear. *Revised in D14:* this update now happens optimistically, before the response, with rollback on error.
 - **Dialogs moved out of the cards:** a client `TaskDialogsProvider` wraps the board. It holds `{ task, view, open }` and renders one `TaskDetailsDialog` and one `DeleteTaskDialog`. Cards call `useOpenTask()(task, view)`. The provider updates its task copy from each mutation's response, so the dialog shows fresh data.
 
 **Why:**
@@ -208,3 +208,30 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - The provider exposes `openCreate()` next to `openTask()`. The header button is a small client `AddTaskButton`, so `Board` stays a server component.
 
 **Why:** A forced priority choice was asked for explicitly («Выберите…»). The API also requires it, so there's no default to fall back on. Sharing the fields keeps creating and editing identical by construction.
+
+## D14. Drag-and-drop between columns (desktop only)
+
+**Decision:**
+- **Library:** `@dnd-kit/core`, without the sortable package: cards are draggable (`useDraggable`) and columns are drop targets (`useDroppable`, id = status). The order inside a column isn't touched. A dropped task becomes the latest status change, so it lands on top (D4, D5).
+- **Desktop only:**
+  - One sensor is always registered: `DesktopMouseSensor`, a `MouseSensor` subclass. Its activator checks `(min-width: md) and (hover: hover) and (pointer: fine)` with `matchMedia` at `mousedown` and refuses to start a drag otherwise. The check isn't done by switching the sensor list in React state, because dnd-kit's `useSensorSetup` uses the list as an effect dependency array. Changing its length after hydration (0 → 1) triggers React's "dependency array changed size" error. Checking at drag start also handles window resizes.
+  - Touch devices, narrow windows (stacked columns) and keyboard users move tasks with the status picker in the detail dialog (D12).
+- **Clicks keep working:** a drag starts only after the mouse moves 5px, so a click still opens the details.
+- **Card accessibility attributes:** only dnd-kit's listeners are spread onto the card, not its `attributes` (`role="button"`, `tabIndex`, `aria-describedby`), so the card keeps its own accessible structure.
+- **Drag visuals:**
+  - The dragged card is drawn in a `DragOverlay` (columns clip their scrolling content) as a raised card with a grabbing cursor. The original card fades to 40%.
+  - Collision detection is `pointerWithin`: the column under the mouse pointer is the target, and it gets a primary-coloured tint and outline. Dropping on the task's own column or outside any column does nothing.
+  - The drop has no animation (`dropAnimation={null}`), because the card is already in its new column.
+- **The move is optimistic:**
+  - `useMoveTask` removes the task from the old column and puts it on top of the new one right away, with `statusChangedAt` set to now.
+  - On success, the server's version replaces it. On error, both columns are restored from a snapshot and a snackbar says «Не удалось переместить задачу».
+  - This also applies to status changes from the detail dialog.
+- **Screen-reader announcements** are in Russian. `DndContext` has a fixed `id` to avoid hydration mismatches from its generated ids.
+
+**Why:**
+- A drop has to feel instant. Waiting for the response would snap the card back to its old column for a moment.
+- Dragging between stacked columns on a phone is clumsy and fights with scrolling. The status picker already covers that case.
+
+**Trade-offs:**
+- Reordering within a column isn't supported (as in D4).
+- If a column re-fetches while a move is in flight, the optimistic entry can be overwritten. The move cancels both columns' in-flight queries first to make this unlikely.

@@ -164,18 +164,24 @@ function DetailsContent({
       sx={{ display: "contents" }}
     >
       {editing && (
-        <Box
-          role="status"
+        <Stack
+          direction="row"
           sx={{
-            px: 3,
-            py: 1,
+            alignItems: "center",
+            justifyContent: "space-between",
+            pl: 3,
+            pr: 1.5,
+            py: 0.5,
             bgcolor: amber[100],
-            typography: "body2",
-            fontWeight: 500,
           }}
         >
-          ⚠️ Режим редактирования
-        </Box>
+          <Typography role="status" variant="body2" sx={{ fontWeight: 500 }}>
+            ⚠️ Режим редактирования
+          </Typography>
+          <IconButton size="small" aria-label="Закрыть" onClick={onClose}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Stack>
       )}
 
       <DialogTitle

@@ -1,5 +1,7 @@
 "use client";
 
+import type { Ref } from "react";
+import { useDraggable, type DraggableSyntheticListeners } from "@dnd-kit/core";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ButtonBase from "@mui/material/ButtonBase";
@@ -11,17 +13,55 @@ import type { Task } from "@/lib/tasks";
 import { PriorityChip } from "./PriorityChip";
 import { useTaskDialogs } from "./TaskDialogs";
 
+export interface DraggedTask {
+  task: Task;
+}
+
 export function TaskCard({ task }: { task: Task }) {
+  const { setNodeRef, listeners, isDragging } = useDraggable({
+    id: task.id,
+    data: { task } satisfies DraggedTask,
+  });
+
+  return (
+    <TaskCardView
+      task={task}
+      ref={setNodeRef}
+      listeners={listeners}
+      dimmed={isDragging}
+    />
+  );
+}
+
+interface TaskCardViewProps {
+  task: Task;
+  ref?: Ref<HTMLDivElement>;
+  listeners?: DraggableSyntheticListeners;
+  dimmed?: boolean;
+  lifted?: boolean;
+}
+
+export function TaskCardView({
+  task,
+  ref,
+  listeners,
+  dimmed = false,
+  lifted = false,
+}: TaskCardViewProps) {
   const { openTask } = useTaskDialogs();
 
   return (
     <Card
+      ref={ref}
+      {...listeners}
       component="article"
-      variant="outlined"
+      variant={lifted ? "elevation" : "outlined"}
+      elevation={lifted ? 8 : 0}
       sx={{
         position: "relative",
         p: 1.5,
-        cursor: "pointer",
+        cursor: lifted ? "grabbing" : "pointer",
+        opacity: dimmed ? 0.4 : 1,
         transition: (theme) =>
           theme.transitions.create("background-color", {
             duration: theme.transitions.duration.shortest,

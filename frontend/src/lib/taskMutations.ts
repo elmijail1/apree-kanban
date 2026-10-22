@@ -64,15 +64,39 @@ export function useMoveTask() {
   return useMutation({
     mutationFn: ({ task, status }: { task: Task; status: TaskStatus }) =>
       updateTaskStatus(task.id, status),
-    onSuccess: (moved, { task }) => {
-      if (moved.status === task.status) {
-        return;
+    onMutate: async ({ task, status }) => {
+      if (status === task.status) {
+        return undefined;
       }
-      updateColumnItems(queryClient, task.status, (items) =>
-        items.filter((item) => item.id !== moved.id),
+      const keys = [
+        ["tasks", task.status],
+        ["tasks", status],
+      ];
+      await Promise.all(
+        keys.map((queryKey) => queryClient.cancelQueries({ queryKey })),
       );
-      prependToColumn(queryClient, moved);
+      const snapshot = keys.map(
+        (queryKey) =>
+          [queryKey, queryClient.getQueryData<ColumnData>(queryKey)] as const,
+      );
+      updateColumnItems(queryClient, task.status, (items) =>
+        items.filter((item) => item.id !== task.id),
+      );
+      prependToColumn(queryClient, {
+        ...task,
+        status,
+        statusChangedAt: new Date().toISOString(),
+      });
+      return { snapshot };
     },
+    onError: (_error, _variables, context) =>
+      context?.snapshot.forEach(([queryKey, data]) =>
+        queryClient.setQueryData(queryKey, data),
+      ),
+    onSuccess: (moved) =>
+      updateColumnItems(queryClient, moved.status, (items) =>
+        items.map((item) => (item.id === moved.id ? moved : item)),
+      ),
   });
 }
 

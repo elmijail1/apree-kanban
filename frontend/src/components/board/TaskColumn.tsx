@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useDroppable } from "@dnd-kit/core";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
@@ -9,9 +10,10 @@ import Paper from "@mui/material/Paper";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
 import { fetchColumnPage } from "@/lib/api";
 import type { TaskStatus } from "@/lib/tasks";
-import { TaskCard } from "./TaskCard";
+import { TaskCard, type DraggedTask } from "./TaskCard";
 
 interface TaskColumnProps {
   status: TaskStatus;
@@ -43,10 +45,15 @@ export function TaskColumn({ status, title }: TaskColumnProps) {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  const { setNodeRef, isOver, active } = useDroppable({ id: status });
+  const dragged = active?.data.current as DraggedTask | undefined;
+  const isDropTarget = isOver && dragged?.task.status !== status;
+
   const tasks = query.data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
     <Paper
+      ref={setNodeRef}
       component="section"
       aria-label={title}
       variant="outlined"
@@ -54,7 +61,17 @@ export function TaskColumn({ status, title }: TaskColumnProps) {
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
-        bgcolor: "grey.50",
+        bgcolor: (theme) =>
+          isDropTarget
+            ? alpha(theme.palette.primary.main, 0.08)
+            : theme.palette.grey[50],
+        borderColor: isDropTarget ? "primary.main" : undefined,
+        outline: isDropTarget ? "1px solid" : "none",
+        outlineColor: "primary.main",
+        transition: (theme) =>
+          theme.transitions.create(["background-color", "border-color"], {
+            duration: theme.transitions.duration.shortest,
+          }),
       }}
     >
       <Typography
