@@ -89,3 +89,21 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - On create, `createdAt` and `statusChangedAt` are set from one app-side timestamp. The DB and app clocks drift by tens of ms in Docker, and mixing them made `createdAt` look later than `statusChangedAt`.
 
 **Trade-offs:** No deep link or refresh-safe URL for a single task. Adding one later means adding `GET /tasks/:id` back.
+
+## D7. Frontend stack and API access
+
+**Decision:**
+- Next.js 16 (App Router, Turbopack, `src/` dir), MUI 9 with Emotion via `@mui/material-nextjs` (`AppRouterCacheProvider` from `v16-appRouter`), Roboto via `next/font/google` (latin + cyrillic) exposed as `--font-roboto`.
+- TanStack Query 5 for all server state. One `QueryClient` per browser session (`staleTime` 30s, `retry` 1). Devtools are included and dropped from production builds automatically.
+- The browser calls the API through a Next rewrite: `/api/:path*` → `${API_URL ?? 'http://localhost:3001'}/:path*`.
+- Removed scaffold defaults: Tailwind, `cacheComponents`, `partialPrefetching`.
+- Zod 4 on the frontend for form validation, with the same limits as the API, copied rather than shared.
+- oxlint as the linter (same as the backend). No ESLint.
+
+**Why:**
+- `useInfiniteQuery` maps directly onto the per-column cursor pagination (D5) and gives loading and error states the assignment requires. Mutations give optimistic moves.
+- The same-origin proxy means no CORS, no API URL baked into the client bundle, and no need for a frontend `.env` (Next only reads env files from `frontend/`).
+- `cacheComponents` forces `<Suspense>` boundaries around dynamic data at build time and `partialPrefetching` optimizes links. Neither helps a single client-fetched page.
+- Copying 3 validation rules is cheaper than a shared package with its own build setup.
+
+**Trade-offs:** Validation limits live in two places (backend `tasks.schemas.ts`, frontend). They must be changed together. The backend's CORS setting stays as a fallback for direct calls.

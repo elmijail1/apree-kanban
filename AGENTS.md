@@ -37,3 +37,13 @@ Kanban task tracker, built as a test assignment (spec: `docs/assignment.md`).
 - Inject `PrismaService` (global module). Don't create `PrismaClient` elsewhere.
 - Format with `pnpm exec prettier --write src`; check with `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm lint` and `pnpm test`.
 - Unit tests sit next to the code as `*.spec.ts` (Vitest, globals enabled).
+
+## Frontend conventions
+
+- Read `frontend/AGENTS.md` too. Next.js generates it, and it points to the version-matched docs in `node_modules/next/dist/docs/`. Check those before using a Next API.
+- Call the API only through the same-origin proxy: `fetch('/api/tasks…')`, never `http://localhost:3001` (see D7).
+- Server state goes through TanStack Query (queries and mutations). Don't keep copies of server data in `useState`.
+- Use MUI components and `sx` for styling. No Tailwind, no global CSS beyond `CssBaseline`.
+- Use the `@/` import alias for `src/`. Code style follows the scaffold (double quotes).
+- UI text is in Russian (column names come from the spec: «Новая», «В работе», «Готово»).
+- Check with `pnpm exec tsc --noEmit`, `pnpm lint` and `pnpm build` from `frontend/`.

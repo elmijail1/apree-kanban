@@ -1,7 +1,12 @@
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+
 export default function Home() {
   return (
-    <main>
-      <div>Hello world!</div>
-    </main>
+    <Container component="main" sx={{ py: 3 }}>
+      <Typography variant="h5" component="h1">
+        Задачи
+      </Typography>
+    </Container>
   );
 }
