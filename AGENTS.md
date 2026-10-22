@@ -44,6 +44,8 @@ Kanban task tracker, built as a test assignment (spec: `docs/assignment.md`).
 - Call the API only through the same-origin proxy: `fetch('/api/tasks…')`, never `http://localhost:3001` (see D7).
 - Server state goes through TanStack Query (queries and mutations). Don't keep copies of server data in `useState`.
 - Use MUI components and `sx` for styling. No Tailwind, no global CSS beyond `CssBaseline`.
+- API types, status/priority values and column config live in `src/lib/tasks.ts`. They mirror the Prisma enums in `backend/prisma/schema.prisma` and must be changed together. Fetch helpers are in `src/lib/api.ts`.
+- Task queries use the key `['tasks', status]`; mutations should invalidate or update `['tasks']`.
 - Use the `@/` import alias for `src/`. Code style follows the scaffold (double quotes).
 - UI text is in Russian (column names come from the spec: «Новая», «В работе», «Готово»).
 - Check with `pnpm exec tsc --noEmit`, `pnpm lint` and `pnpm build` from `frontend/`.

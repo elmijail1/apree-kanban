@@ -107,3 +107,16 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - Copying 3 validation rules is cheaper than a shared package with its own build setup.
 
 **Trade-offs:** Validation limits live in two places (backend `tasks.schemas.ts`, frontend). They must be changed together. The backend's CORS setting stays as a fallback for direct calls.
+
+## D8. Board rendering: server board, client columns with their own queries
+
+**Decision:**
+- `Board` is a server component: the header, the "Добавить задачу" button and a responsive grid (one column on mobile, three on `md`+, each column scrolling on its own).
+- `TaskColumn` is a client component. Each column runs its own `useInfiniteQuery` (`['tasks', status]`, `GET /tasks?status=<status>&limit=5`), loads the next page when a sentinel at the bottom of its list scrolls into view, and has its own loading (skeletons), error (with retry) and empty states.
+- Cards are client components, because they render data fetched in the browser.
+
+**Why:**
+- Independent columns: one failing or paging column doesn't affect the others, and each maps directly onto one infinite query.
+- Data is fetched in the browser, so the page itself stays static, and the loading and error states the assignment requires live in one place.
+
+**Trade-offs:** The initial load is 3 parallel requests, not one `status=all` request. The API still supports `status=all`; it could seed the three caches later if one request matters.
