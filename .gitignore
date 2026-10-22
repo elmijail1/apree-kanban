@@ -5,3 +5,4 @@ dist/
 coverage/
 *.tsbuildinfo
 backend/src/generated/
+next-env.d.ts
