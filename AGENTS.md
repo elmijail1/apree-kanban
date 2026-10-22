@@ -38,6 +38,13 @@ Kanban task tracker, built as a test assignment (spec: `docs/assignment.md`).
 - Inject `PrismaService` (global module). Don't create `PrismaClient` elsewhere.
 - Format with `pnpm exec prettier --write src`; check with `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm lint` and `pnpm test`.
 - Unit tests sit next to the code as `*.spec.ts` (Vitest, globals enabled).
+- API tests live in `backend/test/*.e2e-spec.ts` and run with `pnpm test:e2e` against the `<db>_test` database (derived from `DATABASE_URL`, or `TEST_DATABASE_URL`). Global setup runs `prisma migrate deploy` on it, and each test empties `tasks` first. Never point them at the dev database. Don't use `prisma migrate reset` here: Prisma blocks it when run by AI agents.
+
+## Tests
+
+- `pnpm test` (root): backend unit tests and frontend tests. No database needed.
+- `pnpm test:e2e` (root): backend API tests. Needs `pnpm db:up`.
+- Frontend tests are plain-logic `*.test.ts` files next to the code (Vitest, Node environment, explicit `vitest` imports, no jsdom). Keep cache and validation logic in pure functions (`lib/taskCache.ts`, `lib/taskSchema.ts`) so they stay testable without React.
 
 ## Frontend conventions
 

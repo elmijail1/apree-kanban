@@ -6,7 +6,8 @@
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "oxlint src/"
+    "lint": "oxlint src/",
+    "test": "vitest run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -27,7 +28,8 @@
     "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "oxlint": "^1.89.0"
+    "oxlint": "^1.89.0",
+    "vitest": "^4.1.12"
   },
   "packageManager": "pnpm@11.3.0"
 }

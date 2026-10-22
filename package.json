@@ -4,7 +4,9 @@
   "packageManager": "pnpm@11.3.0",
   "scripts": {
     "db:up": "docker compose up -d",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @apree-kanban/backend test:e2e"
   },
   "devDependencies": {
     "typescript": "~6.0.2"

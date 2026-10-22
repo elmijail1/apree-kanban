@@ -241,3 +241,31 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 **Trade-offs:**
 - Reordering within a column isn't supported (as in D4).
 - If a column re-fetches while a move is in flight, the optimistic entry can be overwritten. The move cancels both columns' in-flight queries first to make this unlikely.
+
+## D15. Tests: 6 API tests on a test database, 3 frontend logic tests
+
+**Decision:**
+- **Backend API tests** (`backend/test/tasks.e2e-spec.ts`, `pnpm test:e2e`) boot the real `AppModule` with supertest against a separate `kanban_test` database. Its URL comes from `DATABASE_URL` with `_test` appended, or from `TEST_DATABASE_URL`. A Vitest global setup runs `prisma migrate deploy`, which also creates the database. Each test empties `tasks` first. Files run sequentially. The tests:
+  1. create (trimming, `new` status, equal timestamps);
+  2. validation of bad inputs (one table-driven test);
+  3. walking a column page by page with ties on `statusChangedAt`: no gaps, no duplicates, correct order;
+  4. a move puts the task first in the new column and bumps `statusChangedAt` and `updatedAt`;
+  5. `statusChangedAt` is unchanged by a repeated status or a content edit;
+  6. `status` is rejected in content edits, and `DELETE` returns 204 then 404.
+- **Frontend tests** (`pnpm test` in `frontend/`) are Node-only Vitest tests of pure logic:
+  1. `taskContentSchema` (trimming, 60/200 limits, matching the API);
+  2. cache updates for a move;
+  3. cache updates for create, delete and edit.
+
+  To make them testable, the cache updates moved out of the mutation hooks into `lib/taskCache.ts` (`removeTask`, `replaceTask`, `prependTask`). `prependTask` now also removes an existing copy of the task first, so a task can't appear twice.
+- The existing cursor unit tests (`task-cursor.spec.ts`) stay. The scaffold's "Hello World" e2e test is removed.
+- **Root scripts:** `pnpm test` runs the backend unit tests and frontend tests, with no database needed. `pnpm test:e2e` runs the API tests.
+
+**Why:**
+- The tests cover the rules that would break silently: keyset pagination with ties, the `statusChangedAt` rule (D4), validation, and the client's cache bookkeeping, which drag-and-drop and the dialogs rely on.
+- Checked that the pagination test fails when the tie-breaker is broken (`id lt` → `id gt`).
+- `prisma migrate reset` isn't used: Prisma blocks it when it detects an AI agent, and `migrate deploy` plus emptying the table is enough.
+
+**Trade-offs:**
+- No component or UI tests: dialogs and drag-and-drop are checked manually.
+- The API tests need Docker Postgres running.

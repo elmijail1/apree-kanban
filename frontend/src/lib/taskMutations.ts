@@ -1,9 +1,4 @@
-import {
-  useMutation,
-  useQueryClient,
-  type InfiniteData,
-  type QueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ApiError,
   createTask,
@@ -11,41 +6,16 @@ import {
   updateTask,
   updateTaskStatus,
 } from "./api";
+import {
+  prependTask,
+  removeTask,
+  replaceTask,
+  type ColumnData,
+} from "./taskCache";
 import type { TaskPatch } from "./taskSchema";
-import type { Task, TaskPage, TaskStatus } from "./tasks";
+import type { Task, TaskStatus } from "./tasks";
 
-type ColumnData = InfiniteData<TaskPage, string | null>;
-
-function updateColumnItems(
-  queryClient: QueryClient,
-  status: TaskStatus,
-  update: (items: Task[]) => Task[],
-) {
-  queryClient.setQueryData<ColumnData>(
-    ["tasks", status],
-    (data) =>
-      data && {
-        ...data,
-        pages: data.pages.map((page) => ({
-          ...page,
-          items: update(page.items),
-        })),
-      },
-  );
-}
-
-function prependToColumn(queryClient: QueryClient, task: Task) {
-  queryClient.setQueryData<ColumnData>(
-    ["tasks", task.status],
-    (data) =>
-      data && {
-        ...data,
-        pages: data.pages.map((page, index) =>
-          index === 0 ? { ...page, items: [task, ...page.items] } : page,
-        ),
-      },
-  );
-}
+const columnKey = (status: TaskStatus) => ["tasks", status];
 
 export function useUpdateTask() {
   const queryClient = useQueryClient();
@@ -53,8 +23,8 @@ export function useUpdateTask() {
     mutationFn: ({ id, patch }: { id: string; patch: TaskPatch }) =>
       updateTask(id, patch),
     onSuccess: (updated) =>
-      updateColumnItems(queryClient, updated.status, (items) =>
-        items.map((task) => (task.id === updated.id ? updated : task)),
+      queryClient.setQueryData<ColumnData>(columnKey(updated.status), (data) =>
+        replaceTask(data, updated),
       ),
   });
 }
@@ -68,10 +38,7 @@ export function useMoveTask() {
       if (status === task.status) {
         return undefined;
       }
-      const keys = [
-        ["tasks", task.status],
-        ["tasks", status],
-      ];
+      const keys = [columnKey(task.status), columnKey(status)];
       await Promise.all(
         keys.map((queryKey) => queryClient.cancelQueries({ queryKey })),
       );
@@ -79,14 +46,16 @@ export function useMoveTask() {
         (queryKey) =>
           [queryKey, queryClient.getQueryData<ColumnData>(queryKey)] as const,
       );
-      updateColumnItems(queryClient, task.status, (items) =>
-        items.filter((item) => item.id !== task.id),
+      queryClient.setQueryData<ColumnData>(columnKey(task.status), (data) =>
+        removeTask(data, task.id),
       );
-      prependToColumn(queryClient, {
-        ...task,
-        status,
-        statusChangedAt: new Date().toISOString(),
-      });
+      queryClient.setQueryData<ColumnData>(columnKey(status), (data) =>
+        prependTask(data, {
+          ...task,
+          status,
+          statusChangedAt: new Date().toISOString(),
+        }),
+      );
       return { snapshot };
     },
     onError: (_error, _variables, context) =>
@@ -94,8 +63,8 @@ export function useMoveTask() {
         queryClient.setQueryData(queryKey, data),
       ),
     onSuccess: (moved) =>
-      updateColumnItems(queryClient, moved.status, (items) =>
-        items.map((item) => (item.id === moved.id ? moved : item)),
+      queryClient.setQueryData<ColumnData>(columnKey(moved.status), (data) =>
+        replaceTask(data, moved),
       ),
   });
 }
@@ -104,7 +73,10 @@ export function useCreateTask() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createTask,
-    onSuccess: (created) => prependToColumn(queryClient, created),
+    onSuccess: (created) =>
+      queryClient.setQueryData<ColumnData>(columnKey(created.status), (data) =>
+        prependTask(data, created),
+      ),
   });
 }
 
@@ -121,8 +93,8 @@ export function useDeleteTask() {
       }
     },
     onSuccess: (_, deleted) =>
-      updateColumnItems(queryClient, deleted.status, (items) =>
-        items.filter((task) => task.id !== deleted.id),
+      queryClient.setQueryData<ColumnData>(columnKey(deleted.status), (data) =>
+        removeTask(data, deleted.id),
       ),
   });
 }
