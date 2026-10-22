@@ -16,6 +16,14 @@ export const createTaskSchema = z.object({
 });
 export type CreateTaskInput = z.output<typeof createTaskSchema>;
 
+export const updateTaskSchema = z
+  .strictObject(createTaskSchema.shape)
+  .partial()
+  .refine((input) => Object.keys(input).length > 0, {
+    message: 'Provide at least one field to update',
+  });
+export type UpdateTaskInput = z.output<typeof updateTaskSchema>;
+
 export const updateTaskStatusSchema = z.object({
   status: taskStatusSchema,
 });

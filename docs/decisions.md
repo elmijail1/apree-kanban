@@ -78,3 +78,14 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - The same response shape for one or all columns lets the frontend merge pages without special cases.
 
 **Trade-offs:** A task moved into a column while the user is paging lands above the loaded pages, so the client must insert its own moves locally. The index is `(status, status_changed_at)` without `id`, so ties are resolved after the index lookup, which is fine at this scale.
+
+## D6. Remaining task endpoints; no `GET /tasks/:id`
+
+**Decision:**
+- `PATCH /tasks/:id` edits content only (`title`, `description`, `priority`; any subset, at least one). `status` in this body is rejected, so moves always go through `PATCH /tasks/:id/status` and its `statusChangedAt` rule.
+- `DELETE /tasks/:id` is a hard delete and returns `204`.
+- A missing task returns `404` from both (Prisma error `P2025`).
+- There's no `GET /tasks/:id`. The list already returns full tasks, so the detail view uses the data it has.
+- On create, `createdAt` and `statusChangedAt` are set from one app-side timestamp. The DB and app clocks drift by tens of ms in Docker, and mixing them made `createdAt` look later than `statusChangedAt`.
+
+**Trade-offs:** No deep link or refresh-safe URL for a single task. Adding one later means adding `GET /tasks/:id` back.

@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -12,9 +15,11 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import {
   createTaskSchema,
   listTasksQuerySchema,
+  updateTaskSchema,
   updateTaskStatusSchema,
   type CreateTaskInput,
   type ListTasksQuery,
+  type UpdateTaskInput,
   type UpdateTaskStatusInput,
 } from './tasks.schemas.js';
 import { TasksService } from './tasks.service.js';
@@ -35,6 +40,14 @@ export class TasksController {
     return this.tasks.create(body);
   }
 
+  @Patch(':id')
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(updateTaskSchema)) body: UpdateTaskInput,
+  ) {
+    return this.tasks.update(id, body);
+  }
+
   @Patch(':id/status')
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
@@ -42,5 +55,11 @@ export class TasksController {
     body: UpdateTaskStatusInput,
   ) {
     return this.tasks.updateStatus(id, body);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.tasks.remove(id);
   }
 }

@@ -20,6 +20,7 @@ Kanban task tracker, built as a test assignment (spec: `docs/assignment.md`).
 ## Working agreement
 
 - **Don't install packages or run scaffolders.** Suggest the exact commands and let the user run them.
+- **Keep code comments to a minimum.** Rationale goes in `docs/decisions.md`, not in source.
 
 ## Database (Prisma)
 
@@ -34,4 +35,5 @@ Kanban task tracker, built as a test assignment (spec: `docs/assignment.md`).
 - ESM with `nodenext`: relative imports need the `.js` extension (`./tasks.service.js`).
 - Validate every request part (body, query, params) with a Zod schema via `ZodValidationPipe`. Schemas and their inferred types live in `<module>.schemas.ts`. Validate route ids with `ParseUUIDPipe`.
 - Inject `PrismaService` (global module). Don't create `PrismaClient` elsewhere.
-- Format with `pnpm exec prettier --write src`; check with `pnpm exec tsc --noEmit -p tsconfig.json` and `pnpm lint`.
+- Format with `pnpm exec prettier --write src`; check with `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm lint` and `pnpm test`.
+- Unit tests sit next to the code as `*.spec.ts` (Vitest, globals enabled).
