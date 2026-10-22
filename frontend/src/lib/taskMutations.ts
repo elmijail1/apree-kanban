@@ -1,11 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  ApiError,
-  createTask,
-  deleteTask,
-  updateTask,
-  updateTaskStatus,
-} from "./api";
+import { ApiError, createTask, deleteTask, updateTask } from "./api";
 import {
   prependTask,
   removeTask,
@@ -20,12 +14,23 @@ const columnKey = (status: TaskStatus) => ["tasks", status];
 export function useUpdateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: TaskPatch }) =>
-      updateTask(id, patch),
-    onSuccess: (updated) =>
+    mutationFn: ({ task, patch }: { task: Task; patch: TaskPatch }) =>
+      updateTask(task.id, patch),
+    onSuccess: (updated, { task }) => {
+      if (updated.status === task.status) {
+        queryClient.setQueryData<ColumnData>(
+          columnKey(updated.status),
+          (data) => replaceTask(data, updated),
+        );
+        return;
+      }
+      queryClient.setQueryData<ColumnData>(columnKey(task.status), (data) =>
+        removeTask(data, task.id),
+      );
       queryClient.setQueryData<ColumnData>(columnKey(updated.status), (data) =>
-        replaceTask(data, updated),
-      ),
+        prependTask(data, updated),
+      );
+    },
   });
 }
 
@@ -33,7 +38,7 @@ export function useMoveTask() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ task, status }: { task: Task; status: TaskStatus }) =>
-      updateTaskStatus(task.id, status),
+      updateTask(task.id, { status }),
     onMutate: async ({ task, status }) => {
       if (status === task.status) {
         return undefined;

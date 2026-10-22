@@ -140,7 +140,7 @@ describe('Tasks API (e2e)', () => {
 
     const moved = (
       await api()
-        .patch(`/tasks/${task.id}/status`)
+        .patch(`/tasks/${task.id}`)
         .send({ status: 'inProgress' })
         .expect(200)
     ).body as TaskJson;
@@ -156,34 +156,31 @@ describe('Tasks API (e2e)', () => {
   it('changes statusChangedAt only on a real move, not on content edits or a repeated status', async () => {
     const task = await seedTask('new');
     const original = LONG_AGO.toISOString();
+    const patch = async (body: object) =>
+      (await api().patch(`/tasks/${task.id}`).send(body).expect(200))
+        .body as TaskJson;
 
-    const sameStatus = (
-      await api()
-        .patch(`/tasks/${task.id}/status`)
-        .send({ status: 'new' })
-        .expect(200)
-    ).body as TaskJson;
+    const sameStatus = await patch({ status: 'new' });
     expect(sameStatus.statusChangedAt).toBe(original);
-    expect(sameStatus.updatedAt).toBe(original);
 
-    const edited = (
-      await api()
-        .patch(`/tasks/${task.id}`)
-        .send({ title: 'Renamed' })
-        .expect(200)
-    ).body as TaskJson;
+    const edited = await patch({ title: 'Renamed' });
     expect(edited.title).toBe('Renamed');
     expect(new Date(edited.updatedAt) > LONG_AGO).toBe(true);
     expect(edited.statusChangedAt).toBe(original);
+
+    const editedAndMoved = await patch({ title: 'Done', status: 'completed' });
+    expect(editedAndMoved).toMatchObject({
+      title: 'Done',
+      status: 'completed',
+    });
+    expect(editedAndMoved.statusChangedAt).toBe(editedAndMoved.updatedAt);
+    expect(new Date(editedAndMoved.statusChangedAt) > LONG_AGO).toBe(true);
   });
 
-  it('rejects status in content edits and returns 404 for a deleted task', async () => {
+  it('rejects an unknown status and returns 404 for a deleted task', async () => {
     const task = await seedTask('new');
 
-    await api()
-      .patch(`/tasks/${task.id}`)
-      .send({ status: 'completed' })
-      .expect(400);
+    await api().patch(`/tasks/${task.id}`).send({ status: 'done' }).expect(400);
     expect(
       (await prisma.task.findUniqueOrThrow({ where: { id: task.id } })).status,
     ).toBe('new');

@@ -17,17 +17,12 @@ export const createTaskSchema = z.object({
 export type CreateTaskInput = z.output<typeof createTaskSchema>;
 
 export const updateTaskSchema = z
-  .strictObject(createTaskSchema.shape)
+  .strictObject({ ...createTaskSchema.shape, status: taskStatusSchema })
   .partial()
   .refine((input) => Object.keys(input).length > 0, {
     message: 'Provide at least one field to update',
   });
 export type UpdateTaskInput = z.output<typeof updateTaskSchema>;
-
-export const updateTaskStatusSchema = z.object({
-  status: taskStatusSchema,
-});
-export type UpdateTaskStatusInput = z.output<typeof updateTaskStatusSchema>;
 
 export const listTasksQuerySchema = z.object({
   status: taskStatusSchema,

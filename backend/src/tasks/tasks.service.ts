@@ -6,7 +6,6 @@ import type {
   CreateTaskInput,
   ListTasksQuery,
   UpdateTaskInput,
-  UpdateTaskStatusInput,
 } from './tasks.schemas.js';
 
 const RECORD_NOT_FOUND = 'P2025';
@@ -61,25 +60,21 @@ export class TasksService {
     });
   }
 
-  async updateStatus(
-    id: string,
-    { status }: UpdateTaskStatusInput,
-  ): Promise<Task> {
-    const now = new Date();
-    await this.prisma.task.updateMany({
-      where: { id, status: { not: status } },
-      data: { status, updatedAt: now, statusChangedAt: now },
-    });
-    const task = await this.prisma.task.findUnique({ where: { id } });
-    if (!task) {
-      throw new NotFoundException(`Task ${id} not found`);
-    }
-    return task;
-  }
-
   async update(id: string, input: UpdateTaskInput): Promise<Task> {
+    const now = new Date();
     try {
-      return await this.prisma.task.update({ where: { id }, data: input });
+      return await this.prisma.$transaction(async (tx) => {
+        if (input.status) {
+          await tx.task.updateMany({
+            where: { id, status: { not: input.status } },
+            data: { statusChangedAt: now },
+          });
+        }
+        return tx.task.update({
+          where: { id },
+          data: { ...input, updatedAt: now },
+        });
+      });
     } catch (error) {
       rethrowNotFound(error, id);
     }

@@ -69,7 +69,7 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - `GET /tasks?status=<new|inProgress|completed>&limit=<1..50, default 5>&cursor=<opaque>` returns one page of one column: `{ items: Task[], nextCursor: string | null }`. `status` is required. Without `cursor` it returns the first page; with `nextCursor` from the previous response, the next one.
 - The cursor is keyset-based. It encodes the last task's `(statusChangedAt, id)` as base64url, and `id` breaks ties between tasks moved in the same millisecond.
 - *Revised:* an earlier `status=all` mode (all three columns in one response, keyed by status) was removed once each column got its own query (D8). Nothing used it.
-- `PATCH /tasks/:id/status` with `{ status }` is a dedicated endpoint for moves. It's one conditional `UPDATE … WHERE status <> :new`, so `statusChangedAt` changes only on a real move.
+- `PATCH /tasks/:id/status` with `{ status }` is a dedicated endpoint for moves. It's one conditional `UPDATE … WHERE status <> :new`, so `statusChangedAt` changes only on a real move. *Revised in D16:* merged into `PATCH /tasks/:id`.
 - API on port 3001 (`API_PORT`), CORS for `WEB_ORIGIN` (default `http://localhost:3000`).
 
 **Why:**
@@ -82,7 +82,7 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 ## D6. Remaining task endpoints; no `GET /tasks/:id`
 
 **Decision:**
-- `PATCH /tasks/:id` edits content only (`title`, `description`, `priority`; any subset, at least one). `status` in this body is rejected, so moves always go through `PATCH /tasks/:id/status` and its `statusChangedAt` rule.
+- `PATCH /tasks/:id` edits content only (`title`, `description`, `priority`; any subset, at least one). `status` in this body is rejected, so moves always go through `PATCH /tasks/:id/status` and its `statusChangedAt` rule. *Revised in D16:* `status` is now accepted here.
 - `DELETE /tasks/:id` is a hard delete and returns `204`.
 - A missing task returns `404` from both (Prisma error `P2025`).
 - There's no `GET /tasks/:id`. The list already returns full tasks, so the detail view uses the data it has.
@@ -183,8 +183,8 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 ## D12. Status picker and board-level task dialogs
 
 **Decision:**
-- **Status picker:** the detail dialog's status chip works like the priority one (D11). In view mode a choice saves immediately through `PATCH /tasks/:id/status`. In edit mode it's part of the draft. Both pickers use one generic `ChipPicker`.
-- **Saving in edit mode** sends the content `PATCH` first (only if something changed), then the status `PATCH` (only if the status changed). There are two requests because the API keeps moves on their own endpoint (D5, D6).
+- **Status picker:** the detail dialog's status chip works like the priority one (D11). In view mode a choice saves immediately through `PATCH /tasks/:id/status`. In edit mode it's part of the draft. Both pickers use one generic `ChipPicker`. *Revised in D16:* it now uses `PATCH /tasks/:id`.
+- **Saving in edit mode** sends the content `PATCH` first (only if something changed), then the status `PATCH` (only if the status changed). There are two requests because the API keeps moves on their own endpoint (D5, D6). *Revised in D16:* it's now one request.
 - **Cache after a move:** no re-fetch. The task is removed from the old column's cached pages and put at the top of the new column's first page. That's where the server sorts it, because its `statusChangedAt` is now the newest in that column, and the keyset cursors of later pages stay valid. Columns that were never loaded are left alone and fetch fresh data when they appear. *Revised in D14:* this update now happens optimistically, before the response, with rollback on error.
 - **Dialogs moved out of the cards:** a client `TaskDialogsProvider` wraps the board. It holds `{ task, view, open }` and renders one `TaskDetailsDialog` and one `DeleteTaskDialog`. Cards call `useOpenTask()(task, view)`. The provider updates its task copy from each mutation's response, so the dialog shows fresh data.
 
@@ -194,7 +194,7 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - This is the groundwork for the task-link idea (`docs/ideas.md`): an open task in the URL would only need to feed this provider.
 
 **Trade-offs:**
-- Saving in edit mode isn't atomic. If the content saves and the move fails, the content stays saved and the dialog stays in edit mode with an error; saving again retries the move.
+- Saving in edit mode isn't atomic. If the content saves and the move fails, the content stays saved and the dialog stays in edit mode with an error; saving again retries the move. *Resolved by D16.*
 - The dialog shows a copy of the task taken when it was opened, refreshed only by its own mutations. If a column re-fetches meanwhile, the dialog doesn't update.
 
 ## D13. Create-task dialog
@@ -251,7 +251,7 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
   3. walking a column page by page with ties on `statusChangedAt`: no gaps, no duplicates, correct order;
   4. a move puts the task first in the new column and bumps `statusChangedAt` and `updatedAt`;
   5. `statusChangedAt` is unchanged by a repeated status or a content edit;
-  6. `status` is rejected in content edits, and `DELETE` returns 204 then 404.
+  6. `status` is rejected in content edits, and `DELETE` returns 204 then 404. *Revised in D16:* now an unknown status → 400, and test 5 also covers a combined title-and-status edit.
 - **Frontend tests** (`pnpm test` in `frontend/`) are Node-only Vitest tests of pure logic:
   1. `taskContentSchema` (trimming, 60/200 limits, matching the API);
   2. cache updates for a move;
@@ -269,3 +269,24 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 **Trade-offs:**
 - No component or UI tests: dialogs and drag-and-drop are checked manually.
 - The API tests need Docker Postgres running.
+
+## D16. Status changes go through the general `PATCH /tasks/:id`
+
+**Decision:**
+- `PATCH /tasks/:id/status` is removed. `PATCH /tasks/:id` accepts any non-empty subset of `title`, `description`, `priority` and `status`.
+- **The `statusChangedAt` rule (D4)** now lives in `TasksService.update`, inside one interactive transaction:
+  1. If `status` is in the body, `updateMany({ where: { id, status: { not: status } }, data: { statusChangedAt: now } })`. It matches only when the status really changes.
+  2. `update({ where: { id }, data: { ...input, updatedAt: now } })`. This applies the change and returns a 404 for a missing task (P2025).
+
+  Both use the same `now`, so after a move `updatedAt === statusChangedAt`.
+- **Frontend:**
+  - `updateTaskStatus` is gone.
+  - `useUpdateTask` takes the task, so it knows the old column. On success it either replaces the task in place or moves it between column caches.
+  - `useMoveTask` (optimistic, for drag-and-drop and the view-mode status picker) sends `PATCH /tasks/:id` with `{ status }`.
+  - Saving in edit mode sends one request with every changed field.
+
+**Why:**
+- With the move rule enforced in the service, status is just another field, so a separate endpoint only added surface.
+- Saving in edit mode becomes atomic. Before, it was content then status, and could half-succeed (D12).
+
+**Trade-offs:** A `PATCH` that repeats the current status still counts as an edit: `updatedAt` moves, `statusChangedAt` doesn't. Before, the status endpoint skipped the write entirely. Avoiding it would need a "did anything change" check, which isn't worth it.

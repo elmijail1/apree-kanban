@@ -16,11 +16,9 @@ import {
   createTaskSchema,
   listTasksQuerySchema,
   updateTaskSchema,
-  updateTaskStatusSchema,
   type CreateTaskInput,
   type ListTasksQuery,
   type UpdateTaskInput,
-  type UpdateTaskStatusInput,
 } from './tasks.schemas.js';
 import { TasksService } from './tasks.service.js';
 
@@ -46,15 +44,6 @@ export class TasksController {
     @Body(new ZodValidationPipe(updateTaskSchema)) body: UpdateTaskInput,
   ) {
     return this.tasks.update(id, body);
-  }
-
-  @Patch(':id/status')
-  updateStatus(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body(new ZodValidationPipe(updateTaskStatusSchema))
-    body: UpdateTaskStatusInput,
-  ) {
-    return this.tasks.updateStatus(id, body);
   }
 
   @Delete(':id')

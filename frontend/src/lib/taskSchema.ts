@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { TaskPriority } from "./tasks";
+import type { TaskPriority, TaskStatus } from "./tasks";
 
 export const TITLE_MAX = 60;
 export const DESCRIPTION_MAX = 200;
@@ -18,4 +18,4 @@ export const taskContentSchema = z.object({
 export type TaskContent = z.output<typeof taskContentSchema>;
 
 export type NewTask = TaskContent & { priority: TaskPriority };
-export type TaskPatch = Partial<NewTask>;
+export type TaskPatch = Partial<NewTask & { status: TaskStatus }>;

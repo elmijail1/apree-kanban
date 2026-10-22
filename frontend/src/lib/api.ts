@@ -54,13 +54,6 @@ export function updateTask(id: string, patch: TaskPatch): Promise<Task> {
   return sendJson<Task>(`/tasks/${id}`, "PATCH", patch);
 }
 
-export function updateTaskStatus(
-  id: string,
-  status: TaskStatus,
-): Promise<Task> {
-  return sendJson<Task>(`/tasks/${id}/status`, "PATCH", { status });
-}
-
 export function deleteTask(id: string): Promise<void> {
   return request<void>(`/tasks/${id}`, { method: "DELETE" });
 }

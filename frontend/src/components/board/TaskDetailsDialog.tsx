@@ -110,7 +110,7 @@ function DetailsContent({
     editing
       ? setPriority(next)
       : update.mutate(
-          { id: task.id, patch: { priority: next } },
+          { task, patch: { priority: next } },
           { onSuccess: onUpdated },
         );
 
@@ -124,7 +124,7 @@ function DetailsContent({
   const parsed = taskContentSchema.safeParse({ title, description });
   const errors = parsed.success ? {} : z.flattenError(parsed.error).fieldErrors;
 
-  const handleSave = async (event: SubmitEvent) => {
+  const handleSave = (event: SubmitEvent) => {
     event.preventDefault();
     if (!parsed.success || saving) {
       return;
@@ -139,28 +139,21 @@ function DetailsContent({
     if (priority !== task.priority) {
       patch.priority = priority;
     }
-    try {
-      let saved = task;
-      if (Object.keys(patch).length > 0) {
-        saved = await update.mutateAsync({ id: task.id, patch });
-        onUpdated(saved);
-      }
-      if (status !== saved.status) {
-        saved = await move.mutateAsync({ task: saved, status });
-      }
-      onSaved(saved);
-    } catch {
+    if (status !== task.status) {
+      patch.status = status;
+    }
+    if (Object.keys(patch).length === 0) {
+      onSaved(task);
       return;
     }
+    update.mutate({ task, patch }, { onSuccess: onSaved });
   };
 
   return (
     <Box
       component={editing ? "form" : "div"}
       noValidate
-      onSubmit={
-        editing ? (event: SubmitEvent) => void handleSave(event) : undefined
-      }
+      onSubmit={editing ? handleSave : undefined}
       sx={{ display: "contents" }}
     >
       {editing && (
