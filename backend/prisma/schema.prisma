@@ -1,0 +1,40 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TaskStatus {
+  new
+  inProgress @map("in_progress")
+  completed
+
+  @@map("task_status")
+}
+
+enum TaskPriority {
+  low
+  normal
+  high
+
+  @@map("task_priority")
+}
+
+model Task {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  title           String       @db.VarChar(60)
+  description     String       @db.VarChar(200)
+  priority        TaskPriority @default(normal)
+  status          TaskStatus   @default(new)
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  statusChangedAt DateTime     @default(now()) @map("status_changed_at") @db.Timestamptz(3)
+
+  @@index([status, statusChangedAt])
+  @@map("tasks")
+}
