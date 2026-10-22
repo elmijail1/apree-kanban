@@ -9,6 +9,7 @@ The original task is in [docs/assignment.md](docs/assignment.md). Every design d
 **Requirements:** Node.js 22.12+ (developed on 26), pnpm 11, Docker.
 
 ```sh
+git clone https://github.com/elmijail1/apree-kanban.git .  # from an empty dir
 cp .env.example .env
 pnpm install                     # also generates the Prisma client
 pnpm db:up                       # Postgres 18 in Docker, on localhost:5433
