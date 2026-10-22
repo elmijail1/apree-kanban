@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ButtonBase from "@mui/material/ButtonBase";
@@ -9,27 +8,11 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { Task } from "@/lib/tasks";
-import { DeleteTaskDialog } from "./DeleteTaskDialog";
 import { PriorityChip } from "./PriorityChip";
-import { TaskDetailsDialog } from "./TaskDetailsDialog";
-
-type DialogView =
-  | { kind: "details" }
-  | { kind: "edit"; from: "column" | "details" }
-  | { kind: "delete" };
+import { useOpenTask } from "./TaskDialogs";
 
 export function TaskCard({ task }: { task: Task }) {
-  const [dialog, setDialog] = useState<{ view: DialogView; open: boolean }>({
-    view: { kind: "details" },
-    open: false,
-  });
-  const { view, open } = dialog;
-
-  const show = (next: DialogView) => setDialog({ view: next, open: true });
-  const showDetails = () => show({ kind: "details" });
-  const close = () => setDialog((current) => ({ ...current, open: false }));
-  const cancelEdit = () =>
-    view.kind === "edit" && view.from === "details" ? showDetails() : close();
+  const openTask = useOpenTask();
 
   return (
     <Card
@@ -52,7 +35,7 @@ export function TaskCard({ task }: { task: Task }) {
     >
       <ButtonBase
         disableRipple
-        onClick={showDetails}
+        onClick={() => openTask(task, { kind: "details" })}
         sx={{
           position: "static",
           display: "block",
@@ -78,35 +61,19 @@ export function TaskCard({ task }: { task: Task }) {
           <IconButton
             size="small"
             aria-label="Редактировать"
-            onClick={() => show({ kind: "edit", from: "column" })}
+            onClick={() => openTask(task, { kind: "edit", from: "column" })}
           >
             <EditOutlinedIcon fontSize="small" />
           </IconButton>
           <IconButton
             size="small"
             aria-label="Удалить"
-            onClick={() => show({ kind: "delete" })}
+            onClick={() => openTask(task, { kind: "delete" })}
           >
             <DeleteOutlinedIcon fontSize="small" />
           </IconButton>
         </Stack>
       </Stack>
-
-      <TaskDetailsDialog
-        task={task}
-        open={open && view.kind !== "delete"}
-        editing={view.kind === "edit"}
-        onEdit={() => show({ kind: "edit", from: "details" })}
-        onCancelEdit={cancelEdit}
-        onSaved={showDetails}
-        onDelete={() => show({ kind: "delete" })}
-        onClose={close}
-      />
-      <DeleteTaskDialog
-        task={task}
-        open={open && view.kind === "delete"}
-        onClose={close}
-      />
     </Card>
   );
 }

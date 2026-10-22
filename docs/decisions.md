@@ -128,12 +128,11 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - Clicking anywhere on the card opens `TaskDetailsDialog`: title, priority, status, created date (ru-RU format), full description, and Edit and Delete buttons at the bottom. Closing is a cross icon in the top-right corner, not a bottom button, so it doesn't compete with the real actions. The cross, a backdrop click and Escape all use the same `onClose`. On phones (below `sm`) the dialog is full-screen.
 - The card is clickable through its title button stretched over the whole card (`::after` overlay), with the icon buttons layered above it. Hovering highlights the card (`grey.100`) and shows a pointer cursor.
 - The detail view is separate from the future editor.
-- Each card keeps its own `open` state.
+- *Revised in D12:* each card originally kept its own `open` state. The dialogs now live in one board-level provider.
 
 **Why:**
 - Keeps cards compact, so more fit in a column.
 - The stretched title button keeps the whole card clickable without nesting buttons inside a button, which breaks accessibility, and keyboard users get a real focusable button.
-- State per card is the least code for now.
 
 **Trade-offs:** No URL for an open task. Moving the open state into the URL is listed in `docs/ideas.md`.
 
@@ -152,7 +151,7 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
   - Only changed fields are sent; with no changes, Save just leaves edit mode.
 - **Closing edit mode:**
   - The close cross is hidden; «Отмена» is the explicit way out.
-  - «Отмена» and Escape go back to where editing started: the column if it was the card's edit icon, the detail view if it was the dialog's «Редактировать». The card records this as `{ kind: "edit", from: "column" | "details" }`.
+  - «Отмена» and Escape go back to where editing started: the column if it was the card's edit icon, the detail view if it was the dialog's «Редактировать». The dialog state records this as `{ kind: "edit", from: "column" | "details" }`.
   - A backdrop click discards the edits and closes the dialog entirely.
   - A successful save returns to the detail view.
   - While a dialog closes, the card keeps its last kind (only `open` flips), so the closing dialog doesn't flash back to the view layout during its fade-out.
@@ -174,3 +173,20 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 **Why:** A priority change is a single quick action, so in view mode it doesn't need a whole edit-mode round trip. Edit mode keeps its rule that nothing is saved until «Сохранить».
 
 **Trade-offs:** The same control behaves differently in the two modes. The amber edit-mode styling is what tells the user which rule applies.
+
+## D12. Status picker and board-level task dialogs
+
+**Decision:**
+- **Status picker:** the detail dialog's status chip works like the priority one (D11). In view mode a choice saves immediately through `PATCH /tasks/:id/status`. In edit mode it's part of the draft. Both pickers use one generic `ChipPicker`.
+- **Saving in edit mode** sends the content `PATCH` first (only if something changed), then the status `PATCH` (only if the status changed). There are two requests because the API keeps moves on their own endpoint (D5, D6).
+- **Cache after a move:** no re-fetch. The task is removed from the old column's cached pages and put at the top of the new column's first page. That's where the server sorts it, because its `statusChangedAt` is now the newest in that column, and the keyset cursors of later pages stay valid. Columns that were never loaded are left alone and fetch fresh data when they appear.
+- **Dialogs moved out of the cards:** a client `TaskDialogsProvider` wraps the board. It holds `{ task, view, open }` and renders one `TaskDetailsDialog` and one `DeleteTaskDialog`. Cards call `useOpenTask()(task, view)`. The provider updates its task copy from each mutation's response, so the dialog shows fresh data.
+
+**Why:**
+- A moved task's card unmounts from the old column and mounts in the new one. A dialog that lived inside the card would vanish mid-interaction.
+- One dialog instance for the whole board instead of one per card.
+- This is the groundwork for the task-link idea (`docs/ideas.md`): an open task in the URL would only need to feed this provider.
+
+**Trade-offs:**
+- Saving in edit mode isn't atomic. If the content saves and the move fails, the content stays saved and the dialog stays in edit mode with an error; saving again retries the move.
+- The dialog shows a copy of the task taken when it was opened, refreshed only by its own mutations. If a column re-fetches meanwhile, the dialog doesn't update.

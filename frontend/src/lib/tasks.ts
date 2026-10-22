@@ -21,9 +21,9 @@ export interface TaskPage {
 }
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
-  new: "Новая",
-  inProgress: "В работе",
-  completed: "Готово",
+  new: "🆕 Новая",
+  inProgress: "⚙️ В работе",
+  completed: "✅ Готово",
 };
 
 export const PRIORITY_LABELS: Record<TaskPriority, string> = {

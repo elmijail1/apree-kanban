@@ -8,7 +8,6 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -20,15 +19,24 @@ import Typography from "@mui/material/Typography";
 import { amber } from "@mui/material/colors";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
-import { useUpdateTask } from "@/lib/taskMutations";
+import { useMoveTask, useUpdateTask } from "@/lib/taskMutations";
 import {
   DESCRIPTION_MAX,
   TITLE_MAX,
   taskContentSchema,
   type TaskPatch,
 } from "@/lib/taskSchema";
-import { STATUS_LABELS, type Task, type TaskPriority } from "@/lib/tasks";
-import { PriorityPicker } from "./PriorityPicker";
+import {
+  PRIORITY_LABELS,
+  STATUS_LABELS,
+  TASK_PRIORITIES,
+  TASK_STATUSES,
+  type Task,
+  type TaskPriority,
+  type TaskStatus,
+} from "@/lib/tasks";
+import { ChipPicker } from "./ChipPicker";
+import { PRIORITY_COLORS } from "./PriorityChip";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "long",
@@ -41,7 +49,8 @@ interface TaskDetailsDialogProps {
   editing: boolean;
   onEdit: () => void;
   onCancelEdit: () => void;
-  onSaved: () => void;
+  onSaved: (task: Task) => void;
+  onUpdated: (task: Task) => void;
   onDelete: () => void;
   onClose: () => void;
 }
@@ -84,13 +93,17 @@ function DetailsContent({
   onEdit,
   onCancelEdit,
   onSaved,
+  onUpdated,
   onDelete,
   onClose,
 }: TaskDetailsDialogProps) {
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
   const [priority, setPriority] = useState(task.priority);
+  const [status, setStatus] = useState(task.status);
   const update = useUpdateTask();
+  const move = useMoveTask();
+  const saving = update.isPending || move.isPending;
 
   const pendingPriority = update.isPending
     ? update.variables.patch.priority
@@ -99,14 +112,24 @@ function DetailsContent({
   const changePriority = (next: TaskPriority) =>
     editing
       ? setPriority(next)
-      : update.mutate({ id: task.id, patch: { priority: next } });
+      : update.mutate(
+          { id: task.id, patch: { priority: next } },
+          { onSuccess: onUpdated },
+        );
+
+  const pendingStatus = move.isPending ? move.variables.status : undefined;
+  const shownStatus = editing ? status : (pendingStatus ?? task.status);
+  const changeStatus = (next: TaskStatus) =>
+    editing
+      ? setStatus(next)
+      : move.mutate({ task, status: next }, { onSuccess: onUpdated });
 
   const parsed = taskContentSchema.safeParse({ title, description });
   const errors = parsed.success ? {} : z.flattenError(parsed.error).fieldErrors;
 
-  const handleSave = (event: SubmitEvent) => {
+  const handleSave = async (event: SubmitEvent) => {
     event.preventDefault();
-    if (!parsed.success) {
+    if (!parsed.success || saving) {
       return;
     }
     const patch: TaskPatch = {};
@@ -119,18 +142,28 @@ function DetailsContent({
     if (priority !== task.priority) {
       patch.priority = priority;
     }
-    if (Object.keys(patch).length === 0) {
-      onSaved();
+    try {
+      let saved = task;
+      if (Object.keys(patch).length > 0) {
+        saved = await update.mutateAsync({ id: task.id, patch });
+        onUpdated(saved);
+      }
+      if (status !== saved.status) {
+        saved = await move.mutateAsync({ task: saved, status });
+      }
+      onSaved(saved);
+    } catch {
       return;
     }
-    update.mutate({ id: task.id, patch }, { onSuccess: onSaved });
   };
 
   return (
     <Box
       component={editing ? "form" : "div"}
       noValidate
-      onSubmit={editing ? handleSave : undefined}
+      onSubmit={
+        editing ? (event: SubmitEvent) => void handleSave(event) : undefined
+      }
       sx={{ display: "contents" }}
     >
       {editing && (
@@ -184,17 +217,25 @@ function DetailsContent({
         <Stack spacing={2}>
           <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }}>
             <Field label="Приоритет">
-              <PriorityPicker
+              <ChipPicker
+                name="Приоритет"
                 value={shownPriority}
+                options={TASK_PRIORITIES}
+                getLabel={(option) => PRIORITY_LABELS[option]}
+                getChipProps={(option) => ({ color: PRIORITY_COLORS[option] })}
                 onChange={changePriority}
-                disabled={update.isPending}
+                disabled={saving}
               />
             </Field>
             <Field label="Статус">
-              <Chip
-                size="small"
-                variant="outlined"
-                label={STATUS_LABELS[task.status]}
+              <ChipPicker
+                name="Статус"
+                value={shownStatus}
+                options={TASK_STATUSES}
+                getLabel={(option) => STATUS_LABELS[option]}
+                getChipProps={() => ({ variant: "outlined" })}
+                onChange={changeStatus}
+                disabled={saving}
               />
             </Field>
             <Field label="Создана">
@@ -237,7 +278,7 @@ function DetailsContent({
             )}
           </Field>
 
-          {update.isError && (
+          {(update.isError || move.isError) && (
             <Alert severity="error">
               Не удалось сохранить изменения. Попробуйте ещё раз.
             </Alert>
@@ -248,13 +289,13 @@ function DetailsContent({
       <DialogActions sx={{ px: 3, pb: 2 }}>
         {editing ? (
           <>
-            <Button onClick={onCancelEdit} disabled={update.isPending}>
+            <Button onClick={onCancelEdit} disabled={saving}>
               Отмена
             </Button>
             <Button
               type="submit"
               variant="contained"
-              loading={update.isPending}
+              loading={saving}
               disabled={!parsed.success}
             >
               Сохранить

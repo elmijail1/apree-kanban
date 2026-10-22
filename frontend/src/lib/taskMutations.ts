@@ -4,7 +4,7 @@ import {
   type InfiniteData,
   type QueryClient,
 } from "@tanstack/react-query";
-import { ApiError, deleteTask, updateTask } from "./api";
+import { ApiError, deleteTask, updateTask, updateTaskStatus } from "./api";
 import type { TaskPatch } from "./taskSchema";
 import type { Task, TaskPage, TaskStatus } from "./tasks";
 
@@ -37,6 +37,32 @@ export function useUpdateTask() {
       updateColumnItems(queryClient, updated.status, (items) =>
         items.map((task) => (task.id === updated.id ? updated : task)),
       ),
+  });
+}
+
+export function useMoveTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ task, status }: { task: Task; status: TaskStatus }) =>
+      updateTaskStatus(task.id, status),
+    onSuccess: (moved, { task }) => {
+      if (moved.status === task.status) {
+        return;
+      }
+      updateColumnItems(queryClient, task.status, (items) =>
+        items.filter((item) => item.id !== moved.id),
+      );
+      queryClient.setQueryData<ColumnData>(
+        ["tasks", moved.status],
+        (data) =>
+          data && {
+            ...data,
+            pages: data.pages.map((page, index) =>
+              index === 0 ? { ...page, items: [moved, ...page.items] } : page,
+            ),
+          },
+      );
+    },
   });
 }
 

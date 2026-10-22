@@ -2,48 +2,50 @@
 
 import { useState } from "react";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import Chip from "@mui/material/Chip";
+import Chip, { type ChipProps } from "@mui/material/Chip";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
-import {
-  PRIORITY_LABELS,
-  TASK_PRIORITIES,
-  type TaskPriority,
-} from "@/lib/tasks";
-import { PRIORITY_COLORS, PriorityChip } from "./PriorityChip";
 
-interface PriorityPickerProps {
-  value: TaskPriority;
-  onChange: (priority: TaskPriority) => void;
+interface ChipPickerProps<T extends string> {
+  name: string;
+  value: T;
+  options: readonly T[];
+  getLabel: (option: T) => string;
+  getChipProps?: (option: T) => Pick<ChipProps, "color" | "variant">;
+  onChange: (option: T) => void;
   disabled?: boolean;
 }
 
-export function PriorityPicker({
+export function ChipPicker<T extends string>({
+  name,
   value,
+  options,
+  getLabel,
+  getChipProps,
   onChange,
   disabled,
-}: PriorityPickerProps) {
+}: ChipPickerProps<T>) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
-  const select = (priority: TaskPriority) => {
+  const select = (option: T) => {
     setAnchor(null);
-    onChange(priority);
+    onChange(option);
   };
 
   return (
     <>
       <Chip
         size="small"
-        color={PRIORITY_COLORS[value]}
+        {...getChipProps?.(value)}
         disabled={disabled}
         onClick={(event) => setAnchor(event.currentTarget)}
         aria-haspopup="menu"
         aria-expanded={Boolean(anchor)}
-        aria-label={`Приоритет: ${PRIORITY_LABELS[value]}. Изменить`}
+        aria-label={`${name}: ${getLabel(value)}. Изменить`}
         label={
           <Stack direction="row" sx={{ alignItems: "center" }}>
-            {PRIORITY_LABELS[value]}
+            {getLabel(value)}
             <ArrowDropDownIcon fontSize="small" sx={{ mr: -0.75 }} />
           </Stack>
         }
@@ -53,13 +55,17 @@ export function PriorityPicker({
         open={Boolean(anchor)}
         onClose={() => setAnchor(null)}
       >
-        {TASK_PRIORITIES.filter((priority) => priority !== value).map(
-          (priority) => (
-            <MenuItem key={priority} dense onClick={() => select(priority)}>
-              <PriorityChip priority={priority} />
+        {options
+          .filter((option) => option !== value)
+          .map((option) => (
+            <MenuItem key={option} dense onClick={() => select(option)}>
+              <Chip
+                size="small"
+                {...getChipProps?.(option)}
+                label={getLabel(option)}
+              />
             </MenuItem>
-          ),
-        )}
+          ))}
       </Menu>
     </>
   );
