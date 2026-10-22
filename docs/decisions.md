@@ -136,3 +136,31 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - State per card is the least code for now.
 
 **Trade-offs:** No URL for an open task. Moving the open state into the URL is listed in `docs/ideas.md`.
+
+## D10. Editing and deleting from the card and the detail view
+
+**Decision:**
+- **Edit mode** happens inside the detail dialog and keeps its layout:
+  - amber background;
+  - a «⚠️ Режим редактирования» banner on top;
+  - the title becomes an underlined text field;
+  - the description becomes a multiline field;
+  - the bottom buttons change to «Отмена» / «Сохранить» (primary).
+- **Edit mode rules:**
+  - Only title and description are editable.
+  - Validation uses the same Zod limits as the API (`frontend/src/lib/taskSchema.ts`), with a character counter under each field.
+  - Only changed fields are sent; with no changes, Save just leaves edit mode.
+- **Closing edit mode:**
+  - The close cross is hidden; «Отмена» is the explicit way out.
+  - «Отмена» and Escape go back to where editing started: the column if it was the card's edit icon, the detail view if it was the dialog's «Редактировать». The card records this as `{ kind: "edit", from: "column" | "details" }`.
+  - A backdrop click discards the edits and closes the dialog entirely.
+  - A successful save returns to the detail view.
+  - While a dialog closes, the card keeps its last kind (only `open` flips), so the closing dialog doesn't flash back to the view layout during its fade-out.
+- **Delete** always goes through a confirmation dialog: «Вы уверены, что хотите удалить «…»? Это действие нельзя отменить», with «Отмена» and a red «Удалить». From the detail view, the details dialog is replaced by the confirmation. «Отмена» closes the confirmation and does not return to the details.
+- **Card buttons:** the edit icon opens the detail dialog straight in edit mode, and the delete icon opens the confirmation.
+- **Cache updates:** after a mutation succeeds, the task is replaced in or removed from the column's cached pages (`setQueryData` on `['tasks', status]`). Nothing is re-fetched, because content edits don't change the order and deletes only remove a row.
+- **Deleting an already-deleted task:** a `404` on delete counts as success, since the task is gone either way.
+
+**Trade-offs:**
+- Priority isn't editable in the dialog yet, although the API supports it.
+- After deletes, loaded pages can be shorter than 5. The keyset cursor still continues correctly.

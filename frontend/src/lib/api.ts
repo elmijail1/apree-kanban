@@ -1,4 +1,5 @@
-import { PAGE_SIZE, type TaskPage, type TaskStatus } from "./tasks";
+import type { TaskContent } from "./taskSchema";
+import { PAGE_SIZE, type Task, type TaskPage, type TaskStatus } from "./tasks";
 
 export class ApiError extends Error {
   constructor(
@@ -25,6 +26,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function sendJson<T>(path: string, method: string, body: unknown): Promise<T> {
+  return request<T>(path, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 export function fetchColumnPage(
   status: TaskStatus,
   cursor: string | null,
@@ -35,4 +44,15 @@ export function fetchColumnPage(
     params.set("cursor", cursor);
   }
   return request<TaskPage>(`/tasks?${params}`, { signal });
+}
+
+export function updateTask(
+  id: string,
+  patch: Partial<TaskContent>,
+): Promise<Task> {
+  return sendJson<Task>(`/tasks/${id}`, "PATCH", patch);
+}
+
+export function deleteTask(id: string): Promise<void> {
+  return request<void>(`/tasks/${id}`, { method: "DELETE" });
 }
