@@ -1,4 +1,4 @@
-import type { TaskContent } from "./taskSchema";
+import type { TaskPatch } from "./taskSchema";
 import { PAGE_SIZE, type Task, type TaskPage, type TaskStatus } from "./tasks";
 
 export class ApiError extends Error {
@@ -46,10 +46,7 @@ export function fetchColumnPage(
   return request<TaskPage>(`/tasks?${params}`, { signal });
 }
 
-export function updateTask(
-  id: string,
-  patch: Partial<TaskContent>,
-): Promise<Task> {
+export function updateTask(id: string, patch: TaskPatch): Promise<Task> {
   return sendJson<Task>(`/tasks/${id}`, "PATCH", patch);
 }
 

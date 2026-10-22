@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TaskPriority } from "./tasks";
 
 export const TITLE_MAX = 60;
 export const DESCRIPTION_MAX = 200;
@@ -15,3 +16,5 @@ export const taskContentSchema = z.object({
     .max(DESCRIPTION_MAX, `Не больше ${DESCRIPTION_MAX} символов`),
 });
 export type TaskContent = z.output<typeof taskContentSchema>;
+
+export type TaskPatch = Partial<TaskContent> & { priority?: TaskPriority };

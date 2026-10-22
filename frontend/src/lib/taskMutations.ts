@@ -5,7 +5,7 @@ import {
   type QueryClient,
 } from "@tanstack/react-query";
 import { ApiError, deleteTask, updateTask } from "./api";
-import type { TaskContent } from "./taskSchema";
+import type { TaskPatch } from "./taskSchema";
 import type { Task, TaskPage, TaskStatus } from "./tasks";
 
 type ColumnData = InfiniteData<TaskPage, string | null>;
@@ -31,7 +31,7 @@ function updateColumnItems(
 export function useUpdateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: Partial<TaskContent> }) =>
+    mutationFn: ({ id, patch }: { id: string; patch: TaskPatch }) =>
       updateTask(id, patch),
     onSuccess: (updated) =>
       updateColumnItems(queryClient, updated.status, (items) =>

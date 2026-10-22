@@ -25,10 +25,10 @@ import {
   DESCRIPTION_MAX,
   TITLE_MAX,
   taskContentSchema,
-  type TaskContent,
+  type TaskPatch,
 } from "@/lib/taskSchema";
-import { STATUS_LABELS, type Task } from "@/lib/tasks";
-import { PriorityChip } from "./PriorityChip";
+import { STATUS_LABELS, type Task, type TaskPriority } from "@/lib/tasks";
+import { PriorityPicker } from "./PriorityPicker";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "long",
@@ -89,7 +89,17 @@ function DetailsContent({
 }: TaskDetailsDialogProps) {
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
+  const [priority, setPriority] = useState(task.priority);
   const update = useUpdateTask();
+
+  const pendingPriority = update.isPending
+    ? update.variables.patch.priority
+    : undefined;
+  const shownPriority = editing ? priority : (pendingPriority ?? task.priority);
+  const changePriority = (next: TaskPriority) =>
+    editing
+      ? setPriority(next)
+      : update.mutate({ id: task.id, patch: { priority: next } });
 
   const parsed = taskContentSchema.safeParse({ title, description });
   const errors = parsed.success ? {} : z.flattenError(parsed.error).fieldErrors;
@@ -99,12 +109,15 @@ function DetailsContent({
     if (!parsed.success) {
       return;
     }
-    const patch: Partial<TaskContent> = {};
+    const patch: TaskPatch = {};
     if (parsed.data.title !== task.title) {
       patch.title = parsed.data.title;
     }
     if (parsed.data.description !== task.description) {
       patch.description = parsed.data.description;
+    }
+    if (priority !== task.priority) {
+      patch.priority = priority;
     }
     if (Object.keys(patch).length === 0) {
       onSaved();
@@ -171,7 +184,11 @@ function DetailsContent({
         <Stack spacing={2}>
           <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }}>
             <Field label="Приоритет">
-              <PriorityChip priority={task.priority} />
+              <PriorityPicker
+                value={shownPriority}
+                onChange={changePriority}
+                disabled={update.isPending}
+              />
             </Field>
             <Field label="Статус">
               <Chip

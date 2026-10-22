@@ -147,7 +147,7 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
   - the description becomes a multiline field;
   - the bottom buttons change to «Отмена» / «Сохранить» (primary).
 - **Edit mode rules:**
-  - Only title and description are editable.
+  - Title, description and priority are editable.
   - Validation uses the same Zod limits as the API (`frontend/src/lib/taskSchema.ts`), with a character counter under each field.
   - Only changed fields are sent; with no changes, Save just leaves edit mode.
 - **Closing edit mode:**
@@ -162,5 +162,15 @@ Columns are ordered by `statusChangedAt DESC, id DESC`, backed by the index `(st
 - **Deleting an already-deleted task:** a `404` on delete counts as success, since the task is gone either way.
 
 **Trade-offs:**
-- Priority isn't editable in the dialog yet, although the API supports it.
 - After deletes, loaded pages can be shorter than 5. The keyset cursor still continues correctly.
+
+## D11. Priority picker in the detail dialog
+
+**Decision:**
+- In the detail dialog, the priority chip is clickable (with a ▾ arrow) and opens a menu with the other two priorities, each shown as its coloured chip. Cards keep a plain, non-clickable chip.
+- **View mode:** choosing a priority saves it immediately (`PATCH /tasks/:id` with `{ priority }`). While the request runs, the chip already shows the new value and is disabled. On failure, it reverts and the dialog shows the save error.
+- **Edit mode:** the choice only changes the draft. It's sent with the title and description on «Сохранить», and discarded on «Отмена».
+
+**Why:** A priority change is a single quick action, so in view mode it doesn't need a whole edit-mode round trip. Edit mode keeps its rule that nothing is saved until «Сохранить».
+
+**Trade-offs:** The same control behaves differently in the two modes. The amber edit-mode styling is what tells the user which rule applies.
